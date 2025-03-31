@@ -1,101 +1,120 @@
 // src/main.ts
 import "./style.css";
-import axios from "axios";
-import { TriviaQuestion } from "./types";
+import {
+  startGame,
+  startProgressiveGame,
+  useFiftyFifty,
+  usePhoneFriend,
+  useAskAudience,
+  walkAway,
+  setupKeyboardSupport,
+  setupSoundControls,
+  resumeGame,
+} from "./gameLogic";
 
-const prizeLadder = [
-  100, 200, 300, 500, 1000, 2000, 4000, 8000, 16000, 32000, 64000, 125000,
-  250000, 500000, 1000000,
-];
+// Initialize event listeners for difficulty selection
+const progressiveBtn = document.getElementById(
+  "progressive-btn"
+) as HTMLButtonElement;
+const easyBtn = document.getElementById("easy-btn") as HTMLButtonElement;
+const mediumBtn = document.getElementById("medium-btn") as HTMLButtonElement;
+const hardBtn = document.getElementById("hard-btn") as HTMLButtonElement;
+const resumeBtn = document.getElementById("resume-btn") as HTMLButtonElement;
 
-let questions: TriviaQuestion[] = [];
-let currentQuestionIndex = 0;
-let gameStarted = false;
+// Lifeline buttons
+const fiftyFiftyBtn = document.getElementById(
+  "fifty-fifty"
+) as HTMLButtonElement;
+const phoneFriendBtn = document.getElementById(
+  "phone-friend"
+) as HTMLButtonElement;
+const askAudienceBtn = document.getElementById(
+  "ask-audience"
+) as HTMLButtonElement;
 
-const questionEl = document.getElementById("question") as HTMLDivElement;
-const answersEl = document.getElementById("answers") as HTMLUListElement;
-const prizeEl = document.getElementById("prize") as HTMLParagraphElement;
-const nextPrizeEl = document.getElementById(
-  "next-prize"
-) as HTMLParagraphElement;
+// Walk away button
+const walkAwayBtn = document.getElementById("walk-away") as HTMLButtonElement;
+
+// Modal close buttons
+const histogramCloseBtn = document.getElementById(
+  "histogram-close"
+) as HTMLButtonElement;
+const phoneCloseBtn = document.getElementById(
+  "phone-close"
+) as HTMLButtonElement;
+
+// Restart button
 const startBtn = document.getElementById("start-btn") as HTMLButtonElement;
 
-// Hide answers initially
-answersEl.style.display = "none";
+// Initialize the game
+function initializeGame() {
+  // Check if a saved game exists and show the resume button if so
+  const hasSavedGame = resumeGame();
+  if (hasSavedGame) {
+    resumeBtn.classList.remove("hidden");
+  }
 
-async function fetchQuestions(amount: number = 15): Promise<TriviaQuestion[]> {
-  const response = await axios.get(
-    `https://opentdb.com/api.php?amount=${amount}&difficulty=hard&type=multiple`
-  );
-  return response.data.results;
-}
+  // Set up difficulty selection
+  progressiveBtn.addEventListener("click", () => startProgressiveGame());
+  easyBtn.addEventListener("click", () => startGame("easy"));
+  mediumBtn.addEventListener("click", () => startGame("medium"));
+  hardBtn.addEventListener("click", () => startGame("hard"));
+  resumeBtn.addEventListener("click", () => resumeGame());
 
-function shuffleArray(array: string[]): string[] {
-  return array.sort(() => Math.random() - 0.5);
-}
+  // Set up lifelines
+  fiftyFiftyBtn.addEventListener("click", useFiftyFifty);
+  phoneFriendBtn.addEventListener("click", usePhoneFriend);
+  askAudienceBtn.addEventListener("click", useAskAudience);
 
-function displayQuestion() {
-  const question = questions[currentQuestionIndex];
-  questionEl.innerHTML = question.question;
-  answersEl.innerHTML = "";
-  answersEl.style.display = "block"; // Show answers when question loads
+  // Set up walk away
+  walkAwayBtn.addEventListener("click", walkAway);
 
-  const answers = shuffleArray([
-    ...question.incorrect_answers,
-    question.correct_answer,
-  ]);
-  answers.forEach((answer) => {
-    const li = document.createElement("li");
-    const button = document.createElement("button");
-    button.textContent = answer;
-    button.className =
-      "w-full max-w-xs px-4 py-2 bg-blue-800 text-white rounded-md hover:bg-red-600 transition-colors";
-    button.addEventListener("click", () => handleAnswer(answer));
-    li.appendChild(button);
-    answersEl.appendChild(li);
+  // Set up modal close buttons
+  histogramCloseBtn.addEventListener("click", () => {
+    const audienceHistogramEl = document.getElementById(
+      "audience-histogram"
+    ) as HTMLDivElement;
+    audienceHistogramEl.classList.add("hidden");
+  });
+  phoneCloseBtn.addEventListener("click", () => {
+    const phoneConversationEl = document.getElementById(
+      "phone-conversation"
+    ) as HTMLDivElement;
+    phoneConversationEl.classList.add("hidden");
   });
 
-  prizeEl.textContent = `Current Prize: $${
-    prizeLadder[currentQuestionIndex - 1] || 0
-  }`;
-  nextPrizeEl.textContent = `Next Prize: $${
-    prizeLadder[currentQuestionIndex] || "Millionaire!"
-  }`;
-}
-
-function handleAnswer(selectedAnswer: string) {
-  const currentQuestion = questions[currentQuestionIndex];
-  if (selectedAnswer === currentQuestion.correct_answer) {
-    currentQuestionIndex++;
-    if (currentQuestionIndex < questions.length) {
-      displayQuestion();
+  // Set up restart button
+  startBtn.addEventListener("click", () => {
+    const difficultySelectionEl = document.getElementById(
+      "difficulty-selection"
+    ) as HTMLDivElement;
+    const gameUiEl = document.getElementById("game-ui") as HTMLDivElement;
+    difficultySelectionEl.style.display = "block";
+    gameUiEl.classList.add("hidden");
+    startBtn.style.display = "none";
+    const questionEl = document.getElementById("question") as HTMLDivElement;
+    questionEl.textContent = "";
+    const answerButtons = [
+      document.getElementById("answer-a") as HTMLButtonElement,
+      document.getElementById("answer-b") as HTMLButtonElement,
+      document.getElementById("answer-c") as HTMLButtonElement,
+      document.getElementById("answer-d") as HTMLButtonElement,
+    ];
+    answerButtons.forEach((btn) => btn.classList.remove("hidden"));
+    const hasSavedGame = resumeGame();
+    if (hasSavedGame) {
+      resumeBtn.classList.remove("hidden");
     } else {
-      questionEl.textContent = "Congratulations! You’re a Millionaire!";
-      answersEl.innerHTML = "";
-      answersEl.style.display = "none";
-      startBtn.style.display = "block";
-      gameStarted = false;
+      resumeBtn.classList.add("hidden");
     }
-  } else {
-    questionEl.textContent = `Game Over! Correct answer was: ${currentQuestion.correct_answer}`;
-    answersEl.innerHTML = "";
-    answersEl.style.display = "none";
-    prizeEl.textContent = `Final Prize: $${
-      prizeLadder[currentQuestionIndex - 1] || 0
-    }`;
-    nextPrizeEl.textContent = "";
-    startBtn.style.display = "block";
-    gameStarted = false;
-  }
+  });
+
+  // Set up keyboard support
+  setupKeyboardSupport();
+
+  // Set up sound controls
+  setupSoundControls();
 }
 
-async function startGame() {
-  if (gameStarted) return;
-  gameStarted = true;
-  startBtn.style.display = "none";
-  questions = await fetchQuestions();
-  currentQuestionIndex = 0;
-  displayQuestion();
-}
-
-startBtn.addEventListener("click", startGame);
+// Start the game
+initializeGame();

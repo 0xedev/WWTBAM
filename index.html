@@ -5,25 +5,295 @@
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Who Wants to Be a Millionaire</title>
+    <style>
+      @keyframes grow {
+        from {
+          width: 0%;
+        }
+        to {
+          width: 100%;
+        }
+      }
+      @keyframes fade-in {
+        from {
+          opacity: 0;
+          transform: translateY(10px);
+        }
+        to {
+          opacity: 1;
+          transform: translateY(0);
+        }
+      }
+      .animate-grow {
+        animation: grow 1s ease-in-out forwards;
+      }
+      .animate-fade-in {
+        animation: fade-in 0.5s ease-in-out forwards;
+      }
+    </style>
   </head>
   <body
-    class="flex items-center justify-center min-h-screen bg-gray-900 text-white font-sans"
+    class="min-h-screen bg-gradient-to-b from-blue-900 to-black bg-[radial-gradient(ellipse_at_center,_rgba(255,255,255,0.1)_0%,_transparent_70%)] text-white font-sans flex items-center justify-center"
   >
-    <div
-      id="game-container"
-      class="text-center p-6 bg-gray-800 rounded-lg shadow-lg max-w-lg w-full"
-    >
-      <h1 class="text-4xl font-bold mb-6">Who Wants to Be a Millionaire</h1>
-      <div id="question" class="text-xl mb-6"></div>
-      <ul id="answers" class="space-y-4"></ul>
-      <p id="prize" class="text-lg mt-4">Current Prize: $0</p>
-      <p id="next-prize" class="text-lg mt-2">Next Prize: $100</p>
+    <div id="game-container" class="relative w-full max-w-5xl p-4">
+      <!-- Sound Controls -->
+      <div class="absolute top-2 right-2 flex space-x-2">
+        <button
+          id="mute-btn"
+          class="px-2 py-1 bg-gray-600 rounded-full hover:bg-gray-700 transition-colors text-sm"
+        >
+          Mute
+        </button>
+        <input
+          id="volume-slider"
+          type="range"
+          min="0"
+          max="1"
+          step="0.1"
+          value="0.5"
+          class="w-20"
+        />
+      </div>
+      <!-- Difficulty Selection -->
+      <div id="difficulty-selection" class="text-center">
+        <h1 class="text-3xl md:text-5xl font-bold mb-6 text-yellow-400">
+          Who Wants to Be a Millionaire
+        </h1>
+        <p class="text-lg md:text-2xl mb-4">Select Difficulty:</p>
+        <div
+          class="flex flex-col md:flex-row justify-center space-y-3 md:space-y-0 md:space-x-4"
+        >
+          <button
+            id="progressive-btn"
+            class="px-4 py-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors text-base md:text-lg"
+          >
+            Progressive
+          </button>
+          <button
+            id="easy-btn"
+            class="px-4 py-2 bg-green-600 rounded-full hover:bg-green-700 transition-colors text-base md:text-lg"
+          >
+            Easy
+          </button>
+          <button
+            id="medium-btn"
+            class="px-4 py-2 bg-yellow-600 rounded-full hover:bg-yellow-700 transition-colors text-base md:text-lg"
+          >
+            Medium
+          </button>
+          <button
+            id="hard-btn"
+            class="px-4 py-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors text-base md:text-lg"
+          >
+            Hard
+          </button>
+        </div>
+        <button
+          id="resume-btn"
+          class="mt-4 px-4 py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors text-base md:text-lg hidden"
+        >
+          Resume Game
+        </button>
+      </div>
+      <!-- Game UI -->
+      <div id="game-ui" class="hidden flex flex-col md:flex-row">
+        <!-- Main Content: Question and Answers -->
+        <div class="flex-1 flex flex-col items-center">
+          <div id="timer" class="text-base md:text-lg mb-2 hidden">
+            Time Left: 30s
+          </div>
+          <div
+            id="question"
+            class="bg-gray-900 bg-opacity-80 text-lg md:text-2xl p-4 md:p-6 rounded-lg w-full text-center mb-4 md:mb-8 border-2 border-yellow-400"
+          >
+            Question goes here
+          </div>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
+            <button
+              id="answer-a"
+              class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center active:bg-orange-800"
+            >
+              <span class="mr-2 font-bold">A:</span> <span>Option A</span>
+            </button>
+            <button
+              id="answer-b"
+              class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center active:bg-orange-800"
+            >
+              <span class="mr-2 font-bold">B:</span> <span>Option B</span>
+            </button>
+            <button
+              id="answer-c"
+              class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center active:bg-orange-800"
+            >
+              <span class="mr-2 font-bold">C:</span> <span>Option C</span>
+            </button>
+            <button
+              id="answer-d"
+              class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center active:bg-orange-800"
+            >
+              <span class="mr-2 font-bold">D:</span> <span>Option D</span>
+            </button>
+          </div>
+          <div
+            class="flex flex-wrap justify-center space-x-2 md:space-x-4 mt-4 md:mt-6"
+          >
+            <div
+              id="lifelines"
+              class="flex flex-wrap justify-center space-x-2 md:space-x-4"
+            >
+              <button
+                id="fifty-fifty"
+                class="px-3 py-1 md:px-4 md:py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors flex items-center text-sm md:text-base"
+              >
+                <svg
+                  class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M12 4v16m8-8H4"
+                  ></path>
+                </svg>
+                50/50
+              </button>
+              <button
+                id="phone-friend"
+                class="px-3 py-1 md:px-4 md:py-2 bg-orange-600 rounded-full hover:bg-orange-700 transition-colors flex items-center text-sm md:text-base"
+              >
+                <svg
+                  class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                  ></path>
+                </svg>
+                Phone a Friend
+              </button>
+              <button
+                id="ask-audience"
+                class="px-3 py-1 md:px-4 md:py-2 bg-teal-600 rounded-full hover:bg-teal-700 transition-colors flex items-center text-sm md:text-base"
+              >
+                <svg
+                  class="w-4 h-4 md:w-5 md:h-5 mr-1 md:mr-2"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    stroke-linecap="round"
+                    stroke-linejoin="round"
+                    stroke-width="2"
+                    d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                  ></path>
+                </svg>
+                Ask the Audience
+              </button>
+            </div>
+            <button
+              id="walk-away"
+              class="px-3 py-1 md:px-4 md:py-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors flex items-center text-sm md:text-base hidden"
+            >
+              Walk Away (W)
+            </button>
+          </div>
+        </div>
+        <!-- Prize Ladder (Hidden on Mobile by Default) -->
+        <div
+          id="prize-ladder"
+          class="hidden md:block w-full md:w-48 text-center md:text-right mt-4 md:mt-0"
+        >
+          <ul class="text-sm md:text-lg">
+            <li class="py-1">15: $1,000,000</li>
+            <li class="py-1">14: $500,000</li>
+            <li class="py-1">13: $250,000</li>
+            <li class="py-1">12: $125,000</li>
+            <li class="py-1">11: $64,000</li>
+            <li class="py-1">10: $32,000</li>
+            <li class="py-1">9: $16,000</li>
+            <li class="py-1">8: $8,000</li>
+            <li class="py-1">7: $4,000</li>
+            <li class="py-1">6: $2,000</li>
+            <li class="py-1">5: $1,000</li>
+            <li class="py-1">4: $500</li>
+            <li class="py-1">3: $300</li>
+            <li class="py-1">2: $200</li>
+            <li class="py-1">1: $100</li>
+          </ul>
+        </div>
+      </div>
+      <!-- Restart Button -->
       <button
         id="start-btn"
-        class="mt-6 px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+        class="mt-4 px-4 py-2 bg-red-600 text-white rounded-full hover:bg-red-700 transition-colors hidden text-base md:text-lg"
       >
         Start Game
       </button>
+      <!-- Audience Histogram -->
+      <div
+        id="audience-histogram"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      >
+        <div class="bg-gray-800 p-4 md:p-6 rounded-lg w-11/12 max-w-md">
+          <h2 class="text-xl md:text-2xl mb-4">Audience Vote</h2>
+          <div id="histogram-bars" class="space-y-2"></div>
+          <button
+            id="histogram-close"
+            class="mt-4 px-4 py-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors text-sm md:text-base"
+          >
+            Close
+          </button>
+        </div>
+      </div>
+      <!-- Phone a Friend Conversation -->
+      <div
+        id="phone-conversation"
+        class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center"
+      >
+        <div class="bg-gray-800 p-4 md:p-6 rounded-lg w-11/12 max-w-md">
+          <h2 class="text-xl md:text-2xl mb-4">Phone a Friend</h2>
+          <div id="conversation-text" class="text-left space-y-2">
+            <p
+              id="ringing"
+              class="flex items-center justify-center text-base md:text-lg"
+            >
+              <svg
+                class="w-5 h-5 md:w-6 md:h-6 mr-2 animate-pulse"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+                xmlns="http://www.w3.org/2000/svg"
+              >
+                <path
+                  stroke-linecap="round"
+                  stroke-linejoin="round"
+                  stroke-width="2"
+                  d="M3 5a2 2 0 012-2h3.28a1 1 0 01.948.684l1.498 4.493a1 1 0 01-.502 1.21l-2.257 1.13a11.042 11.042 0 005.516 5.516l1.13-2.257a1 1 0 011.21-.502l4.493 1.498a1 1 0 01.684.949V19a2 2 0 01-2 2h-1C9.716 21 3 14.284 3 6V5z"
+                ></path>
+              </svg>
+              Ringing...
+            </p>
+          </div>
+          <button
+            id="phone-close"
+            class="mt-4 px-4 py-2 bg-red-600 rounded-full hover:bg-red-700 transition-colors hidden text-sm md:text-base"
+          >
+            Close
+          </button>
+        </div>
+      </div>
     </div>
     <script type="module" src="/src/main.ts"></script>
   </body>

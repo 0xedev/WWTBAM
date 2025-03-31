@@ -1,0 +1,31 @@
+<!-- index.html -->
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Who Wants to Be a Millionaire</title>
+    <link rel="stylesheet" href="/src/style.css" />
+  </head>
+  <body
+    class="flex items-center justify-center min-h-screen bg-gray-900 text-white font-sans"
+  >
+    <div
+      id="game-container"
+      class="text-center p-6 bg-gray-800 rounded-lg shadow-lg max-w-lg w-full"
+    >
+      <h1 class="text-4xl font-bold mb-6">Who Wants to Be a Millionaire</h1>
+      <div id="question" class="text-xl mb-6"></div>
+      <ul id="answers" class="space-y-4"></ul>
+      <p id="prize" class="text-lg mt-4">Current Prize: $0</p>
+      <p id="next-prize" class="text-lg mt-2">Next Prize: $100</p>
+      <button
+        id="start-btn"
+        class="mt-6 px-6 py-3 bg-red-600 text-white rounded-md hover:bg-red-700 transition-colors"
+      >
+        Start Game
+      </button>
+    </div>
+    <script type="module" src="/src/main.ts"></script>
+  </body>
+</html>

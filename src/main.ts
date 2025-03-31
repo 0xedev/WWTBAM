@@ -20,6 +20,9 @@ const nextPrizeEl = document.getElementById(
 ) as HTMLParagraphElement;
 const startBtn = document.getElementById("start-btn") as HTMLButtonElement;
 
+// Hide answers initially
+answersEl.style.display = "none";
+
 async function fetchQuestions(amount: number = 15): Promise<TriviaQuestion[]> {
   const response = await axios.get(
     `https://opentdb.com/api.php?amount=${amount}&difficulty=hard&type=multiple`
@@ -35,6 +38,7 @@ function displayQuestion() {
   const question = questions[currentQuestionIndex];
   questionEl.innerHTML = question.question;
   answersEl.innerHTML = "";
+  answersEl.style.display = "block"; // Show answers when question loads
 
   const answers = shuffleArray([
     ...question.incorrect_answers,
@@ -68,12 +72,14 @@ function handleAnswer(selectedAnswer: string) {
     } else {
       questionEl.textContent = "Congratulations! You’re a Millionaire!";
       answersEl.innerHTML = "";
+      answersEl.style.display = "none";
       startBtn.style.display = "block";
       gameStarted = false;
     }
   } else {
     questionEl.textContent = `Game Over! Correct answer was: ${currentQuestion.correct_answer}`;
     answersEl.innerHTML = "";
+    answersEl.style.display = "none";
     prizeEl.textContent = `Final Prize: $${
       prizeLadder[currentQuestionIndex - 1] || 0
     }`;

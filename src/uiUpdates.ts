@@ -1,45 +1,49 @@
-// src/uiUpdates.ts
-import { TriviaQuestion, GameState } from "./types";
-import { OPTION_LABELS, PRIZE_LADDER } from "./constants";
-import { playSound } from "./sound";
+import { ANIMATION_DURATIONS } from "./constants";
 
 export function updateQuestionUI(
-  question: TriviaQuestion,
+  question: { question: string },
   answers: string[],
   answerButtons: HTMLButtonElement[],
   handleAnswer: (answer: string, btn: HTMLButtonElement) => void
 ) {
   const questionEl = document.getElementById("question") as HTMLDivElement;
-  questionEl.innerHTML = question.question;
-
+  if (questionEl) {
+    questionEl.textContent = question.question;
+  }
   answerButtons.forEach((btn, i) => {
-    btn.innerHTML = `<span class="mr-2 font-bold">${OPTION_LABELS[i]}:</span> ${answers[i]}`;
-    btn.className =
-      "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
-    btn.onclick = () => handleAnswer(answers[i], btn);
-    btn.classList.remove("hidden");
+    if (btn) {
+      btn.className =
+        "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center active:bg-orange-800";
+      btn.innerHTML = `<span class="mr-2 font-bold">${String.fromCharCode(
+        65 + i
+      )}:</span> ${answers[i]}`;
+      btn.onclick = () => handleAnswer(answers[i], btn);
+      btn.classList.remove("hidden");
+    }
   });
-
-  playSound("question-reveal");
 }
 
 export function updatePrizeLadder(currentQuestionIndex: number) {
   const prizeLadderEl = document.getElementById(
     "prize-ladder"
-  ) as HTMLDivElement;
-  const ul = prizeLadderEl.querySelector("ul") as HTMLUListElement;
-  ul.innerHTML = "";
-  PRIZE_LADDER.forEach((prize, index) => {
-    const li = document.createElement("li");
-    li.className = `py-1 ${
-      index === currentQuestionIndex ? "text-yellow-400 font-bold" : ""
-    }`;
-    li.textContent = `${15 - index}: $${prize.toLocaleString()}`;
-    ul.appendChild(li);
-  });
+  ) as HTMLUListElement;
+  if (!prizeLadderEl) return;
+
+  const items = prizeLadderEl.getElementsByTagName("li");
+  for (let i = 0; i < items.length; i++) {
+    if (i === items.length - 1 - currentQuestionIndex) {
+      items[i].className = "py-1 font-bold text-yellow-400";
+    } else {
+      items[i].className = "py-1";
+    }
+  }
 }
 
-export function updateLifelinesUI(lifelinesUsed: GameState["lifelinesUsed"]) {
+export function updateLifelinesUI(lifelinesUsed: {
+  fiftyFifty: boolean;
+  phoneFriend: boolean;
+  askAudience: boolean;
+}) {
   const fiftyFiftyBtn = document.getElementById(
     "fifty-fifty"
   ) as HTMLButtonElement;
@@ -50,14 +54,42 @@ export function updateLifelinesUI(lifelinesUsed: GameState["lifelinesUsed"]) {
     "ask-audience"
   ) as HTMLButtonElement;
 
-  fiftyFiftyBtn.disabled = lifelinesUsed.fiftyFifty;
-  phoneFriendBtn.disabled = lifelinesUsed.phoneFriend;
-  askAudienceBtn.disabled = lifelinesUsed.askAudience;
+  if (fiftyFiftyBtn) {
+    fiftyFiftyBtn.disabled = lifelinesUsed.fiftyFifty;
+    fiftyFiftyBtn.className = lifelinesUsed.fiftyFifty
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      : "px-3 py-1 md:px-4 md:py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors flex items-center text-sm md:text-base";
+  }
+  if (phoneFriendBtn) {
+    phoneFriendBtn.disabled = lifelinesUsed.phoneFriend;
+    phoneFriendBtn.className = lifelinesUsed.phoneFriend
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      : "px-3 py-1 md:px-4 md:py-2 bg-orange-600 rounded-full hover:bg-orange-700 transition-colors flex items-center text-sm md:text-base";
+  }
+  if (askAudienceBtn) {
+    askAudienceBtn.disabled = lifelinesUsed.askAudience;
+    askAudienceBtn.className = lifelinesUsed.askAudience
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      : "px-3 py-1 md:px-4 md:py-2 bg-teal-600 rounded-full hover:bg-teal-700 transition-colors flex items-center text-sm md:text-base";
+  }
 }
 
 export function showLoading() {
   const questionEl = document.getElementById("question") as HTMLDivElement;
-  questionEl.innerHTML = `<div class="flex justify-center items-center"><svg class="animate-spin h-5 w-5 text-yellow-400" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path></svg></div>`;
+  if (questionEl) {
+    questionEl.textContent = "Loading question...";
+  }
+  const answerButtons = [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ];
+  answerButtons.forEach((btn) => {
+    if (btn) {
+      btn.classList.add("hidden");
+    }
+  });
 }
 
 export function showGameOver(
@@ -65,20 +97,22 @@ export function showGameOver(
   answerButtons: HTMLButtonElement[],
   answers: string[]
 ) {
-  const questionEl = document.getElementById("question") as HTMLDivElement;
-  questionEl.textContent = `Game Over! Correct answer was: ${correctAnswer}`;
-
   answerButtons.forEach((btn, i) => {
+    if (!btn) return;
     if (answers[i] === correctAnswer) {
       btn.className =
-        "bg-green-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center";
+        "bg-green-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-bounce";
     } else {
-      btn.classList.add("hidden");
+      btn.className =
+        "bg-red-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center";
     }
+    btn.disabled = true;
   });
 }
 
 export function showWin() {
   const questionEl = document.getElementById("question") as HTMLDivElement;
-  questionEl.textContent = "Congratulations! You’re a Millionaire!";
+  if (questionEl) {
+    questionEl.textContent = "Congratulations! You’ve won $1,000,000!";
+  }
 }

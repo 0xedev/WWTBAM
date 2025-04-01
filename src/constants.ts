@@ -4,7 +4,7 @@ export const PRIZE_LADDER = [
   250000, 500000, 1000000,
 ];
 
-export const SAFE_HAVENS = [5, 10]; // Question numbers for safe havens ($1,000 and $32,000)
+export const SAFE_HAVENS = [5, 10, 13]; // Question numbers for safe havens ($1,000, $32,000, $250,000)
 
 export const ANIMATION_DURATIONS = {
   answerSelect: 1000, // 1 second

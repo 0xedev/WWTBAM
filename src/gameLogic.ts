@@ -82,7 +82,12 @@ function stopTimer() {
   }
 }
 
-export async function startGame(difficulty: string) {
+// ( the startGame function)
+
+export async function startGame(
+  difficulty: "easy" | "medium" | "hard",
+  category?: number
+) {
   if (state.gameStarted) return;
   state.gameStarted = true;
 
@@ -95,13 +100,15 @@ export async function startGame(difficulty: string) {
 
   showLoading();
   try {
-    state.questions = await fetchQuestions(difficulty);
+    state.questions = await fetchQuestions(difficulty, category);
     state.currentQuestionIndex = 0;
     state.lifelinesUsed = {
       fiftyFifty: false,
       phoneFriend: false,
       askAudience: false,
     };
+    state.difficulty = difficulty; // Now type-safe
+    state.category = category; // Now type-safe
     displayQuestion();
   } catch (error) {
     const questionEl = document.getElementById("question") as HTMLDivElement;
@@ -122,9 +129,18 @@ function displayQuestion() {
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
 
-  const walkAwayBtn = document.getElementById("walk-away") as HTMLButtonElement;
-  walkAwayBtn.classList.remove("hidden");
-  if (state.currentQuestionIndex === 0) walkAwayBtn.classList.add("hidden");
+  // Show walk away option only after reaching a safe haven
+  const walkAwayModal = document.getElementById(
+    "walk-away-modal"
+  ) as HTMLDivElement;
+  const hasReachedSafeHaven = SAFE_HAVENS.some(
+    (haven) => state.currentQuestionIndex >= haven
+  );
+  if (hasReachedSafeHaven) {
+    walkAwayModal.classList.remove("hidden");
+  } else {
+    walkAwayModal.classList.add("hidden");
+  }
 
   startTimer(() => {
     stopTimer();
@@ -133,7 +149,6 @@ function displayQuestion() {
 
   saveGame();
 }
-
 async function handleAnswer(
   selectedAnswer: string,
   selectedBtn: HTMLButtonElement
@@ -174,20 +189,33 @@ async function handleAnswer(
       startBtn.style.display = "block";
       state.gameStarted = false;
       playSound("win");
-      clearGame();
+      clearGame(); // Already present, just confirming
     }
   } else {
     endGame(false);
   }
 }
 
+// endGame)
 function endGame(walkAway: boolean, message?: string) {
   stopTimer();
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
-  const walkAwayBtn = document.getElementById("walk-away") as HTMLButtonElement;
+  const walkAwayModal = document.getElementById(
+    "walk-away-modal"
+  ) as HTMLDivElement;
   const startBtn = document.getElementById("start-btn") as HTMLButtonElement;
-  lifelinesEl.classList.add("hidden");
-  walkAwayBtn.classList.add("hidden");
+
+  // Add null checks
+  if (lifelinesEl) {
+    lifelinesEl.classList.add("hidden");
+  } else {
+    console.error("Lifelines element not found in the DOM.");
+  }
+  if (walkAwayModal) {
+    walkAwayModal.classList.add("hidden");
+  } else {
+    console.error("Walk away modal element not found in the DOM.");
+  }
 
   const currentQuestion = state.questions[state.currentQuestionIndex];
   const answers = answerButtons.map(
@@ -196,9 +224,13 @@ function endGame(walkAway: boolean, message?: string) {
   if (walkAway) {
     const questionEl = document.getElementById("question") as HTMLDivElement;
     const prize = PRIZE_LADDER[state.currentQuestionIndex - 1] || 0;
-    questionEl.textContent = `You walked away with $${prize.toLocaleString()}!`;
+    if (questionEl) {
+      questionEl.textContent = `You walked away with $${prize.toLocaleString()}!`;
+    }
     answerButtons.forEach((btn) => btn.classList.add("hidden"));
-    startBtn.style.display = "block";
+    if (startBtn) {
+      startBtn.style.display = "block";
+    }
     state.gameStarted = false;
     playSound("walk-away");
   } else {
@@ -209,9 +241,13 @@ function endGame(walkAway: boolean, message?: string) {
     const prize = PRIZE_LADDER[prizeIndex - 1] || 0;
     showGameOver(currentQuestion.correct_answer, answerButtons, answers);
     const questionEl = document.getElementById("question") as HTMLDivElement;
-    questionEl.textContent = message || questionEl.textContent;
-    questionEl.textContent += `\nYou walk away with $${prize.toLocaleString()}.`;
-    startBtn.style.display = "block";
+    if (questionEl) {
+      questionEl.textContent = message || questionEl.textContent;
+      questionEl.textContent += `\nYou walk away with $${prize.toLocaleString()}.`;
+    }
+    if (startBtn) {
+      startBtn.style.display = "block";
+    }
     state.gameStarted = false;
   }
   clearGame();
@@ -380,8 +416,18 @@ export function useAskAudience() {
   updateLifelinesUI(state.lifelinesUsed);
 }
 
-export function walkAway() {
-  endGame(true);
+export function walkAway(confirmed: boolean) {
+  const walkAwayModal = document.getElementById(
+    "walk-away-modal"
+  ) as HTMLDivElement;
+  walkAwayModal.classList.add("hidden");
+
+  if (confirmed) {
+    endGame(true);
+  } else {
+    // Continue the game (modal is already hidden)
+    displayQuestion(); // Refresh UI to ensure timer and buttons are active
+  }
 }
 
 export function setupKeyboardSupport() {
@@ -391,12 +437,6 @@ export function setupKeyboardSupport() {
     const index = OPTION_LABELS.indexOf(key);
     if (index !== -1 && !answerButtons[index].classList.contains("hidden")) {
       answerButtons[index].click();
-    }
-    if (key === "W") {
-      const walkAwayBtn = document.getElementById(
-        "walk-away"
-      ) as HTMLButtonElement;
-      if (!walkAwayBtn.classList.contains("hidden")) walkAwayBtn.click();
     }
   });
 }
@@ -421,9 +461,12 @@ export function resumeGame() {
   const savedState = loadGame();
   if (
     !savedState ||
-    savedState.currentQuestionIndex >= savedState.questions.length
-  )
+    savedState.currentQuestionIndex >= savedState.questions.length || // Game won
+    !savedState.gameStarted // Game ended (lost or walked away)
+  ) {
+    clearGame(); // Clear any stale state
     return false;
+  }
 
   state = savedState;
   state.gameStarted = true;

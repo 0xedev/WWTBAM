@@ -6,12 +6,6 @@ export const PRIZE_LADDER = [
 
 export const SAFE_HAVENS = [5, 10]; // Question numbers for safe havens ($1,000 and $32,000)
 
-export const DIFFICULTY_LEVELS = [
-  { range: [1, 5], difficulty: "easy" },
-  { range: [6, 10], difficulty: "medium" },
-  { range: [11, 15], difficulty: "hard" },
-];
-
 export const ANIMATION_DURATIONS = {
   answerSelect: 1000, // 1 second
   answerReveal: 2000, // 2 seconds

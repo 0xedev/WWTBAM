@@ -2,7 +2,6 @@
 import "./style.css";
 import {
   startGame,
-  startProgressiveGame,
   useFiftyFifty,
   usePhoneFriend,
   useAskAudience,
@@ -13,9 +12,6 @@ import {
 } from "./gameLogic";
 
 // Initialize event listeners for difficulty selection
-const progressiveBtn = document.getElementById(
-  "progressive-btn"
-) as HTMLButtonElement;
 const easyBtn = document.getElementById("easy-btn") as HTMLButtonElement;
 const mediumBtn = document.getElementById("medium-btn") as HTMLButtonElement;
 const hardBtn = document.getElementById("hard-btn") as HTMLButtonElement;
@@ -55,7 +51,6 @@ function initializeGame() {
   }
 
   // Set up difficulty selection
-  progressiveBtn.addEventListener("click", () => startProgressiveGame());
   easyBtn.addEventListener("click", () => startGame("easy"));
   mediumBtn.addEventListener("click", () => startGame("medium"));
   hardBtn.addEventListener("click", () => startGame("hard"));

@@ -13,7 +13,6 @@ import { playSound, toggleMute, setVolume } from "./sound";
 import {
   PRIZE_LADDER,
   SAFE_HAVENS,
-  DIFFICULTY_LEVELS,
   ANIMATION_DURATIONS,
   PHONE_FRIEND_CORRECT_PROBABILITY,
   AUDIENCE_VOTE_CORRECT_PERCENTAGE,
@@ -97,43 +96,6 @@ export async function startGame(difficulty: string) {
   showLoading();
   try {
     state.questions = await fetchQuestions(difficulty);
-    state.currentQuestionIndex = 0;
-    state.lifelinesUsed = {
-      fiftyFifty: false,
-      phoneFriend: false,
-      askAudience: false,
-    };
-    displayQuestion();
-  } catch (error) {
-    const questionEl = document.getElementById("question") as HTMLDivElement;
-    questionEl.textContent = "Failed to load questions. Please try again.";
-    difficultySelectionEl.style.display = "block";
-    gameUiEl.classList.add("hidden");
-    state.gameStarted = false;
-  }
-}
-
-export async function startProgressiveGame() {
-  if (state.gameStarted) return;
-  state.gameStarted = true;
-
-  const gameUiEl = document.getElementById("game-ui") as HTMLDivElement;
-  const difficultySelectionEl = document.getElementById(
-    "difficulty-selection"
-  ) as HTMLDivElement;
-  difficultySelectionEl.style.display = "none";
-  gameUiEl.classList.remove("hidden");
-
-  state.questions = [];
-  showLoading();
-  try {
-    for (const level of DIFFICULTY_LEVELS) {
-      const questions = await fetchQuestions(
-        level.difficulty,
-        level.range[1] - level.range[0] + 1
-      );
-      state.questions.push(...questions);
-    }
     state.currentQuestionIndex = 0;
     state.lifelinesUsed = {
       fiftyFifty: false,

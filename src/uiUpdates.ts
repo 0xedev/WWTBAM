@@ -1,4 +1,4 @@
-import { ANIMATION_DURATIONS } from "./constants";
+import { ANIMATION_DURATIONS } from "./utils/constants";
 
 export function updateQuestionUI(
   question: { question: string },

@@ -1,6 +1,5 @@
-// src/api.ts
 import axios from "axios";
-import { TriviaQuestion } from "./types";
+import { TriviaQuestion } from "../utils/types";
 
 export async function fetchQuestions(
   difficulty: string,

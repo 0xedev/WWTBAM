@@ -206,7 +206,6 @@ export async function handleAnswer(
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.add("hidden");
 
-  // Highlight selected answer as processing
   selectedBtn.className =
     "bg-yellow-400 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-pulse";
   playSound("answer-select");
@@ -221,18 +220,16 @@ export async function handleAnswer(
     currentQuestion.correct_answer
   );
 
-  // Get all answer buttons
   const answerButtons = [
     document.getElementById("answer-a") as HTMLButtonElement,
     document.getElementById("answer-b") as HTMLButtonElement,
     document.getElementById("answer-c") as HTMLButtonElement,
     document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean); // Filter out null/undefined buttons
+  ].filter(Boolean);
 
-  // Highlight selected answer and correct answer
   answerButtons.forEach((btn) => {
     if (!btn) return;
-    const btnAnswer = btn.textContent?.substring(3).trim(); // Extract answer text after "A: ", etc.
+    const btnAnswer = btn.textContent?.substring(3).trim();
     if (btn === selectedBtn) {
       btn.className = `bg-${
         isCorrect ? "green" : "red"
@@ -241,19 +238,38 @@ export async function handleAnswer(
       btn.className =
         "bg-green-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-bounce";
     }
-    btn.disabled = true; // Disable all buttons
+    btn.disabled = true;
   });
 
   playSound(isCorrect ? "correct" : "incorrect");
-  await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for feedback
+  await new Promise((resolve) => setTimeout(resolve, 2000));
 
-  // Proceed based on correctness
   if (isCorrect) {
     state.currentQuestionIndex++;
     console.log(
       "Incremented currentQuestionIndex to:",
       state.currentQuestionIndex
     );
+
+    // Check if we've reached a safe haven (adjust for 0-based index)
+    const currentLevel = state.currentQuestionIndex; // 0-based index after increment
+    const safeHavenReached = SAFE_HAVENS.includes(currentLevel + 1); // Convert to 1-based for SAFE_HAVENS
+    if (safeHavenReached && currentLevel < state.questions.length) {
+      playSound("safe-haven");
+      console.log("Safe haven reached at question:", currentLevel + 1);
+      const walkAwayModal = document.getElementById(
+        "walk-away-modal"
+      ) as HTMLDivElement;
+      if (walkAwayModal) {
+        const prize = PRIZE_LADDER[currentLevel]; // Current winnings
+        walkAwayModal.querySelector(
+          "p"
+        )!.innerHTML = `Would you like to walk away with <span class="text-yellow-400 font-bold">$${prize.toLocaleString()}</span>?`;
+        walkAwayModal.classList.remove("hidden");
+        return; // Wait for user decision before proceeding
+      }
+    }
+
     if (state.currentQuestionIndex < state.questions.length) {
       displayQuestion();
     } else {
@@ -494,6 +510,16 @@ export function walkAway(confirmed: boolean) {
     "walk-away-modal"
   ) as HTMLDivElement;
   if (walkAwayModal) walkAwayModal.classList.add("hidden");
-  if (confirmed) endGame(true, "Walked away");
-  else displayQuestion();
+
+  if (confirmed) {
+    console.log("Player chose to walk away");
+    endGame(true, "Walked away");
+  } else {
+    console.log("Player chose to continue");
+    if (state.currentQuestionIndex < state.questions.length) {
+      displayQuestion(); // Continue to next question
+    } else {
+      endGame(true, "Congratulations, you’ve won!"); // Edge case: last question was a safe haven
+    }
+  }
 }

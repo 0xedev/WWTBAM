@@ -28,10 +28,8 @@ export function renderModals(container: HTMLElement) {
 
   walkAwayYes.addEventListener("click", () => {
     walkAway(true);
-    walkAwayModal.classList.add("hidden");
   });
   walkAwayNo.addEventListener("click", () => {
     walkAway(false);
-    walkAwayModal.classList.add("hidden");
   });
 }

@@ -14,6 +14,7 @@ export function renderModals(container: HTMLElement) {
     </div>
     <div id="phone-friend-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden"></div>
     <div id="audience-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden"></div>
+    <div id="prize-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden"></div>
   `;
 
   const walkAwayModal = document.getElementById(

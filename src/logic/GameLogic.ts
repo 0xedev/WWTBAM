@@ -285,20 +285,14 @@ export async function handleAnswer(
 
 function endGame(walkAway: boolean, message: string) {
   stopTimer();
+
+  // Calculate final prize
   const prize = walkAway
-    ? PRIZE_LADDER[state.currentQuestionIndex - 1]
+    ? PRIZE_LADDER[state.currentQuestionIndex - 1] || 0 // Walk away or win
     : PRIZE_LADDER[
         (SAFE_HAVENS.filter((h) => h <= state.currentQuestionIndex).pop() ||
           0) - 1
-      ] || 0;
-  const questionEl = document.getElementById("question") as HTMLDivElement;
-  if (questionEl) {
-    questionEl.textContent = walkAway
-      ? `You walked away with $${prize.toLocaleString()}!`
-      : `${message} You walk away with $${prize.toLocaleString()}.`;
-  } else {
-    console.error("Question element not found in endGame");
-  }
+      ] || 0; // Lose: last safe haven or 0
 
   // Reset answer buttons
   const answerButtons = [
@@ -313,10 +307,11 @@ function endGame(walkAway: boolean, message: string) {
         "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center";
       btn.disabled = false;
       btn.onclick = null;
-      btn.classList.add("hidden"); // Hide until next game
+      btn.classList.add("hidden");
     }
   });
 
+  // Hide game UI and show difficulty selection
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
   const difficultySelection = document.getElementById(
     "difficulty-selection"
@@ -325,6 +320,33 @@ function endGame(walkAway: boolean, message: string) {
   else console.error("Game UI not found in endGame");
   if (difficultySelection) difficultySelection.classList.remove("hidden");
   else console.error("Difficulty selection not found in endGame");
+
+  // Show prize announcement modal
+  const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
+  if (prizeModal) {
+    playSound(prize > 0 ? "win" : "lose"); // Add win.mp3 and lose.mp3 to sounds/
+    const isWin = message === "Congratulations, you’ve won!";
+    prizeModal.innerHTML = `
+      <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+        <h2 class="text-2xl md:text-3xl mb-4 ${
+          isWin ? "text-yellow-400" : "text-white"
+        }">
+          ${isWin ? "Congratulations!" : "Game Over"}
+        </h2>
+        <p class="text-lg md:text-xl mb-4">
+  You walk away with <span class="font-bold text-yellow-400 animate-bounce">$${prize.toLocaleString()}</span>!
+</p>
+        <button id="close-prize" class="px-4 py-2 bg-green-600 rounded-full hover:bg-green-700 transition-colors text-sm md:text-base">OK</button>
+      </div>
+    `;
+    prizeModal.classList.remove("hidden");
+    document.getElementById("close-prize")?.addEventListener("click", () => {
+      prizeModal.classList.add("hidden");
+    });
+  } else {
+    console.error("Prize modal not found");
+  }
+
   state.gameStarted = false;
   clearGame();
 }

@@ -5,19 +5,23 @@ import { updateAnswers } from "../components/GameUI";
 import {
   PRIZE_LADDER,
   SAFE_HAVENS,
+  PHONE_FRIEND_CORRECT_PROBABILITY, // Add this
+  AUDIENCE_VOTE_CORRECT_PERCENTAGE,
   QUESTION_TIMER_SECONDS,
 } from "../utils/constants";
 import { playSound } from "../utils/sound";
 
-let state: GameState = {
+import { updateLifelinesUI } from "../uiUpdates";
+
+let timer: number | null = null;
+
+export let state: GameState = {
   questions: [],
   currentQuestionIndex: 0,
   gameStarted: false,
   lifelinesUsed: { fiftyFifty: false, phoneFriend: false, askAudience: false },
   timeLeft: QUESTION_TIMER_SECONDS,
 };
-
-let timer: number | null = null;
 
 export function saveGame() {
   localStorage.setItem("wwtbam-game-state", JSON.stringify(state));
@@ -42,8 +46,18 @@ export function startGame(
     "category:",
     category
   );
-  if (state.gameStarted) return;
-  state.gameStarted = true;
+  // Reset state for a new game
+  state = {
+    questions: [],
+    currentQuestionIndex: 0,
+    gameStarted: true,
+    lifelinesUsed: {
+      fiftyFifty: false,
+      phoneFriend: false,
+      askAudience: false,
+    },
+    timeLeft: QUESTION_TIMER_SECONDS,
+  };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
   const difficultySelection = document.getElementById(
@@ -72,6 +86,10 @@ export function startGame(
   console.log("Hiding difficulty selection, showing game UI");
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
+
+  // Update lifeline UI immediately after state reset
+  updateLifelinesUI(state.lifelinesUsed);
+  console.log("Lifelines reset and UI updated:", state.lifelinesUsed);
 
   fetchQuestions(difficulty, category)
     .then((questions) => {
@@ -109,8 +127,15 @@ export function resumeGame(): boolean {
     clearGame();
     return false;
   }
-  state = savedState;
-  state.gameStarted = true;
+  state = {
+    ...savedState,
+    gameStarted: true,
+    lifelinesUsed: savedState.lifelinesUsed || {
+      fiftyFifty: false,
+      phoneFriend: false,
+      askAudience: false,
+    }, // Ensure lifelines are defined
+  };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
   const difficultySelection = document.getElementById(
@@ -144,10 +169,10 @@ function displayQuestion() {
   console.log("Updating answers:", answers);
   updateAnswers(answers);
   updatePrizeLadder(state.currentQuestionIndex);
+  updateLifelinesUI(state.lifelinesUsed); // Add this to refresh lifeline buttons
   startTimer(() => endGame(false, "Time’s up!"));
   saveGame();
 
-  // Show lifelines when question displays
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.remove("hidden");
 }
@@ -156,7 +181,7 @@ export async function handleAnswer(
   selectedAnswer: string,
   selectedBtn: HTMLButtonElement
 ) {
-  console.log("handleAnswer called with selectedAnswer:", selectedAnswer);
+  console.log("handleAnswer called with:", selectedAnswer);
   stopTimer();
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.add("hidden");
@@ -252,14 +277,107 @@ function stopTimer() {
 }
 
 export function useFiftyFifty() {
-  console.log("50/50 used");
+  if (state.lifelinesUsed.fiftyFifty || !state.gameStarted) {
+    console.log("50/50 already used or game not started");
+    return;
+  }
+
+  console.log("Using 50/50 lifeline");
+  const currentQuestion = state.questions[state.currentQuestionIndex];
+  const incorrectAnswers = [...currentQuestion.incorrect_answers];
+  const remainingAnswers = [currentQuestion.correct_answer];
+  const randomIncorrect = incorrectAnswers.splice(
+    Math.floor(Math.random() * incorrectAnswers.length),
+    1
+  )[0];
+  remainingAnswers.push(randomIncorrect);
+
+  const newAnswers = remainingAnswers.sort(() => Math.random() - 0.5);
+
+  state.lifelinesUsed.fiftyFifty = true;
+  console.log("New answers after 50/50:", newAnswers);
+  updateAnswers(newAnswers); // Update UI with only 2 answers
+  updateLifelinesUI(state.lifelinesUsed); // Disable the button
+  playSound("fifty-fifty");
+  saveGame();
 }
+
 export function usePhoneFriend() {
-  console.log("Phone a Friend used");
+  if (state.lifelinesUsed.phoneFriend || !state.gameStarted) return;
+
+  const currentQuestion = state.questions[state.currentQuestionIndex];
+  const isCorrect = Math.random() < PHONE_FRIEND_CORRECT_PROBABILITY;
+  const modal = document.getElementById("phone-friend-modal") as HTMLDivElement;
+
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.innerHTML = `
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <p>Your friend says: "${
+          isCorrect
+            ? currentQuestion.correct_answer
+            : currentQuestion.incorrect_answers[Math.floor(Math.random() * 3)]
+        }" (${isCorrect ? "70%" : "30%"} confident)</p>
+        <button id="close-phone" class="mt-4 px-4 py-2 bg-gray-600 rounded-full">Close</button>
+      </div>
+    `;
+    document.getElementById("close-phone")?.addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+  }
+
+  state.lifelinesUsed.phoneFriend = true;
+  updateLifelinesUI(state.lifelinesUsed);
+  playSound("phone-friend");
+  saveGame();
 }
+
 export function useAskAudience() {
-  console.log("Ask Audience used");
+  if (state.lifelinesUsed.askAudience || !state.gameStarted) return;
+
+  const currentQuestion = state.questions[state.currentQuestionIndex];
+  const answers = [
+    ...currentQuestion.incorrect_answers,
+    currentQuestion.correct_answer,
+  ];
+  const modal = document.getElementById("audience-modal") as HTMLDivElement;
+
+  // Simulate audience voting
+  const votes = answers.map((answer) => {
+    if (answer === currentQuestion.correct_answer) {
+      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE;
+    }
+    return Math.floor(Math.random() * 20);
+  });
+  const total = votes.reduce((sum, vote) => sum + vote, 0);
+  const percentages = votes.map((vote) => Math.round((vote / total) * 100));
+
+  if (modal) {
+    modal.classList.remove("hidden");
+    modal.innerHTML = `
+      <div class="bg-gray-800 p-6 rounded-lg">
+        <h3>Audience Results:</h3>
+        ${answers
+          .map(
+            (answer, i) => `
+          <p>${String.fromCharCode(65 + i)}: ${answer} - ${percentages[i]}%</p>
+        `
+          )
+          .join("")}
+        <button id="close-audience" class="mt-4 px-4 py-2 bg-gray-600 rounded-full">Close</button>
+      </div>
+    `;
+    document.getElementById("close-audience")?.addEventListener("click", () => {
+      modal.classList.add("hidden");
+    });
+  }
+
+  state.lifelinesUsed.askAudience = true;
+  updateLifelinesUI(state.lifelinesUsed);
+  playSound("ask-audience");
+  saveGame();
 }
+
 export function walkAway(confirmed: boolean) {
   const walkAwayModal = document.getElementById(
     "walk-away-modal"

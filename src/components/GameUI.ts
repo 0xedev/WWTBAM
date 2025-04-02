@@ -29,16 +29,23 @@ export function updateAnswers(answers: string[]) {
 
   answerButtons.forEach((btn, i) => {
     if (btn) {
-      // Reset to default classes
-      btn.className =
-        "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
-      btn.innerHTML = `<span class="mr-2 font-bold">${String.fromCharCode(
-        65 + i
-      )}:</span> ${answers[i]}`;
-      btn.onclick = () => {
-        console.log("Answer button clicked:", answers[i]);
-        handleAnswer(answers[i], btn);
-      };
+      if (i < answers.length) {
+        // Show and update buttons for available answers
+        btn.className =
+          "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
+        btn.innerHTML = `<span class="mr-2 font-bold">${String.fromCharCode(
+          65 + i
+        )}:</span> ${answers[i]}`;
+        btn.onclick = () => {
+          console.log("Answer button clicked:", answers[i]);
+          handleAnswer(answers[i], btn);
+        };
+        btn.classList.remove("hidden");
+      } else {
+        // Hide buttons for removed answers
+        btn.classList.add("hidden");
+        btn.onclick = null; // Remove event listener
+      }
     } else {
       console.error(
         "Answer button not found:",

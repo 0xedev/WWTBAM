@@ -57,19 +57,19 @@ export function updateLifelinesUI(lifelinesUsed: {
   if (fiftyFiftyBtn) {
     fiftyFiftyBtn.disabled = lifelinesUsed.fiftyFifty;
     fiftyFiftyBtn.className = lifelinesUsed.fiftyFifty
-      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base cursor-not-allowed"
       : "px-3 py-1 md:px-4 md:py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors flex items-center text-sm md:text-base";
   }
   if (phoneFriendBtn) {
     phoneFriendBtn.disabled = lifelinesUsed.phoneFriend;
     phoneFriendBtn.className = lifelinesUsed.phoneFriend
-      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base cursor-not-allowed"
       : "px-3 py-1 md:px-4 md:py-2 bg-orange-600 rounded-full hover:bg-orange-700 transition-colors flex items-center text-sm md:text-base";
   }
   if (askAudienceBtn) {
     askAudienceBtn.disabled = lifelinesUsed.askAudience;
     askAudienceBtn.className = lifelinesUsed.askAudience
-      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base"
+      ? "px-3 py-1 md:px-4 md:py-2 bg-gray-600 rounded-full flex items-center text-sm md:text-base cursor-not-allowed"
       : "px-3 py-1 md:px-4 md:py-2 bg-teal-600 rounded-full hover:bg-teal-700 transition-colors flex items-center text-sm md:text-base";
   }
 }

@@ -3,13 +3,15 @@ import {
   usePhoneFriend,
   useAskAudience,
 } from "../logic/GameLogic";
+import { updateLifelinesUI } from "../uiUpdates";
+import { state } from "../logic/GameLogic";
 
 export function renderLifelines(container: HTMLElement) {
   container.innerHTML = `
     <div id="lifelines" class="flex justify-center space-x-4 mt-4">
-      <button id="fifty-fifty" class="px-3 py-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors text-sm md:text-base" title="50:50">50:50</button>
-      <button id="phone-friend" class="px-3 py-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors text-sm md:text-base" title="Phone a Friend">Phone</button>
-      <button id="ask-audience" class="px-3 py-2 bg-blue-600 rounded-full hover:bg-blue-700 transition-colors text-sm md:text-base" title="Ask the Audience">Audience</button>
+      <button id="fifty-fifty" class="px-3 py-1 md:px-4 md:py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors flex items-center text-sm md:text-base" title="50:50">50:50</button>
+      <button id="phone-friend" class="px-3 py-1 md:px-4 md:py-2 bg-orange-600 rounded-full hover:bg-orange-700 transition-colors flex items-center text-sm md:text-base" title="Phone a Friend">Phone</button>
+      <button id="ask-audience" class="px-3 py-1 md:px-4 md:py-2 bg-teal-600 rounded-full hover:bg-teal-700 transition-colors flex items-center text-sm md:text-base" title="Ask the Audience">Audience</button>
     </div>
   `;
 
@@ -28,26 +30,27 @@ export function renderLifelines(container: HTMLElement) {
     return;
   }
 
-  fiftyFiftyBtn.onclick = () => {
+  // Initially disable buttons until game starts
+  fiftyFiftyBtn.disabled = !state.gameStarted;
+  phoneFriendBtn.disabled = !state.gameStarted;
+  askAudienceBtn.disabled = !state.gameStarted;
+
+  fiftyFiftyBtn.onclick = (event) => {
+    event.stopPropagation();
+    console.log("50/50 button clicked");
     useFiftyFifty();
-    fiftyFiftyBtn.disabled = true;
-    fiftyFiftyBtn.className =
-      "px-3 py-2 bg-gray-600 rounded-full text-sm md:text-base cursor-not-allowed";
   };
-  phoneFriendBtn.onclick = () => {
+  phoneFriendBtn.onclick = (event) => {
+    event.stopPropagation();
+    console.log("Phone Friend button clicked");
     usePhoneFriend();
-    phoneFriendBtn.disabled = true;
-    phoneFriendBtn.className =
-      "px-3 py-2 bg-gray-600 rounded-full text-sm md:text-base cursor-not-allowed";
   };
-  askAudienceBtn.onclick = () => {
+  askAudienceBtn.onclick = (event) => {
+    event.stopPropagation();
+    console.log("Ask Audience button clicked");
     useAskAudience();
-    askAudienceBtn.disabled = true;
-    askAudienceBtn.className =
-      "px-3 py-2 bg-gray-600 rounded-full text-sm md:text-base cursor-not-allowed";
   };
 
-  // Initially visible (hidden only during answer feedback)
-  const lifelines = document.getElementById("lifelines") as HTMLDivElement;
-  lifelines.classList.remove("hidden");
+  console.log("Rendering lifelines with initial state:", state.lifelinesUsed);
+  updateLifelinesUI(state.lifelinesUsed); // Initial state
 }

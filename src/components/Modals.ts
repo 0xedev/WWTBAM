@@ -2,7 +2,7 @@ import { walkAway } from "../logic/GameLogic";
 
 export function renderModals(container: HTMLElement) {
   container.innerHTML += `
-    <div id="walk-away-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div id="walk-away-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden">
       <div class="bg-gray-800 p-4 md:p-6 rounded-lg w-11/12 max-w-md">
         <h2 class="text-xl md:text-2xl mb-4">Walk Away?</h2>
         <p class="text-base md:text-lg mb-4">Would you like to walk away with your current winnings?</p>
@@ -12,14 +12,13 @@ export function renderModals(container: HTMLElement) {
         </div>
       </div>
     </div>
-    <!-- Add Phone and Audience modals later -->
+    <div id="phone-friend-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden"></div>
+    <div id="audience-modal" class="fixed inset-0 bg-black bg-opacity-50 items-center justify-center hidden"></div>
   `;
 
   const walkAwayModal = document.getElementById(
     "walk-away-modal"
   ) as HTMLDivElement;
-  walkAwayModal.classList.add("hidden"); // Initially hidden
-
   const walkAwayYes = document.getElementById(
     "walk-away-yes"
   ) as HTMLButtonElement;
@@ -27,6 +26,12 @@ export function renderModals(container: HTMLElement) {
     "walk-away-no"
   ) as HTMLButtonElement;
 
-  walkAwayYes.addEventListener("click", () => walkAway(true));
-  walkAwayNo.addEventListener("click", () => walkAway(false));
+  walkAwayYes.addEventListener("click", () => {
+    walkAway(true);
+    walkAwayModal.classList.add("hidden");
+  });
+  walkAwayNo.addEventListener("click", () => {
+    walkAway(false);
+    walkAwayModal.classList.add("hidden");
+  });
 }

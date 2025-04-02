@@ -25,12 +25,11 @@ export function updateAnswers(answers: string[]) {
     document.getElementById("answer-b") as HTMLButtonElement,
     document.getElementById("answer-c") as HTMLButtonElement,
     document.getElementById("answer-d") as HTMLButtonElement,
-  ];
+  ].filter(Boolean);
 
   answerButtons.forEach((btn, i) => {
     if (btn) {
       if (i < answers.length) {
-        // Show and update buttons for available answers
         btn.className =
           "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
         btn.innerHTML = `<span class="mr-2 font-bold">${String.fromCharCode(
@@ -40,11 +39,17 @@ export function updateAnswers(answers: string[]) {
           console.log("Answer button clicked:", answers[i]);
           handleAnswer(answers[i], btn);
         };
+        btn.disabled = false; // Ensure button is enabled
         btn.classList.remove("hidden");
       } else {
-        // Hide buttons for removed answers
-        btn.classList.add("hidden");
-        btn.onclick = null; // Remove event listener
+        btn.className =
+          "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center";
+        btn.innerHTML = `<span class="mr-2 font-bold">${String.fromCharCode(
+          65 + i
+        )}:</span>`;
+        btn.onclick = null;
+        btn.disabled = true; // Disable unused buttons
+        btn.classList.add("hidden"); // Hide unused buttons
       }
     } else {
       console.error(

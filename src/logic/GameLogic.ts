@@ -166,10 +166,29 @@ function displayQuestion() {
   } else {
     console.error("Question element not found");
   }
+
+  // Reset all answer buttons before updating
+  const answerButtons = [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean);
+
+  answerButtons.forEach((btn) => {
+    if (btn) {
+      btn.className =
+        "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
+      btn.disabled = false; // Re-enable buttons
+      btn.classList.remove("hidden"); // Ensure all buttons are visible
+      btn.onclick = null; // Clear previous event listeners
+    }
+  });
+
   console.log("Updating answers:", answers);
-  updateAnswers(answers);
+  updateAnswers(answers); // This will set new text and onclick handlers
   updatePrizeLadder(state.currentQuestionIndex);
-  updateLifelinesUI(state.lifelinesUsed); // Add this to refresh lifeline buttons
+  updateLifelinesUI(state.lifelinesUsed);
   startTimer(() => endGame(false, "Time’s up!"));
   saveGame();
 
@@ -177,6 +196,7 @@ function displayQuestion() {
   if (lifelinesEl) lifelinesEl.classList.remove("hidden");
 }
 
+// handle answer function
 export async function handleAnswer(
   selectedAnswer: string,
   selectedBtn: HTMLButtonElement
@@ -186,6 +206,7 @@ export async function handleAnswer(
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.add("hidden");
 
+  // Highlight selected answer as processing
   selectedBtn.className =
     "bg-yellow-400 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-pulse";
   playSound("answer-select");
@@ -200,12 +221,33 @@ export async function handleAnswer(
     currentQuestion.correct_answer
   );
 
-  selectedBtn.className = `bg-${
-    isCorrect ? "green" : "red"
-  }-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-bounce`;
-  playSound(isCorrect ? "correct" : "incorrect");
-  await new Promise((resolve) => setTimeout(resolve, 2000));
+  // Get all answer buttons
+  const answerButtons = [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean); // Filter out null/undefined buttons
 
+  // Highlight selected answer and correct answer
+  answerButtons.forEach((btn) => {
+    if (!btn) return;
+    const btnAnswer = btn.textContent?.substring(3).trim(); // Extract answer text after "A: ", etc.
+    if (btn === selectedBtn) {
+      btn.className = `bg-${
+        isCorrect ? "green" : "red"
+      }-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-bounce`;
+    } else if (btnAnswer === currentQuestion.correct_answer && !isCorrect) {
+      btn.className =
+        "bg-green-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-bounce";
+    }
+    btn.disabled = true; // Disable all buttons
+  });
+
+  playSound(isCorrect ? "correct" : "incorrect");
+  await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for feedback
+
+  // Proceed based on correctness
   if (isCorrect) {
     state.currentQuestionIndex++;
     console.log(
@@ -219,10 +261,10 @@ export async function handleAnswer(
       endGame(true, "Congratulations, you’ve won!");
     }
   } else {
+    console.log("Ending game due to incorrect answer");
     endGame(false, "Incorrect answer");
   }
 }
-
 // ... (other functions unchanged)
 
 function endGame(walkAway: boolean, message: string) {
@@ -238,13 +280,35 @@ function endGame(walkAway: boolean, message: string) {
     questionEl.textContent = walkAway
       ? `You walked away with $${prize.toLocaleString()}!`
       : `${message} You walk away with $${prize.toLocaleString()}.`;
+  } else {
+    console.error("Question element not found in endGame");
   }
+
+  // Reset answer buttons
+  const answerButtons = [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean);
+  answerButtons.forEach((btn) => {
+    if (btn) {
+      btn.className =
+        "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center";
+      btn.disabled = false;
+      btn.onclick = null;
+      btn.classList.add("hidden"); // Hide until next game
+    }
+  });
+
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
   const difficultySelection = document.getElementById(
     "difficulty-selection"
   ) as HTMLDivElement;
   if (gameUi) gameUi.classList.add("hidden");
+  else console.error("Game UI not found in endGame");
   if (difficultySelection) difficultySelection.classList.remove("hidden");
+  else console.error("Difficulty selection not found in endGame");
   state.gameStarted = false;
   clearGame();
 }

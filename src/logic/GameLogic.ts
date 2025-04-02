@@ -369,66 +369,113 @@ export function useFiftyFifty() {
 export function usePhoneFriend() {
   if (state.lifelinesUsed.phoneFriend || !state.gameStarted) return;
 
+  console.log("Phone a Friend used");
   const currentQuestion = state.questions[state.currentQuestionIndex];
   const isCorrect = Math.random() < PHONE_FRIEND_CORRECT_PROBABILITY;
-  const modal = document.getElementById("phone-friend-modal") as HTMLDivElement;
+  const friendAnswer = isCorrect
+    ? currentQuestion.correct_answer
+    : currentQuestion.incorrect_answers[Math.floor(Math.random() * 3)];
 
+  // Placeholder friend names
+  const friends = ["Alex", "Sam", "Jordan", "Taylor", "Casey"];
+  const friendName = friends[Math.floor(Math.random() * friends.length)];
+
+  const modal = document.getElementById("phone-friend-modal") as HTMLDivElement;
   if (modal) {
     modal.classList.remove("hidden");
+
+    // Initial ringing state
     modal.innerHTML = `
-      <div class="bg-gray-800 p-6 rounded-lg">
-        <p>Your friend says: "${
-          isCorrect
-            ? currentQuestion.correct_answer
-            : currentQuestion.incorrect_answers[Math.floor(Math.random() * 3)]
-        }" (${isCorrect ? "70%" : "30%"} confident)</p>
-        <button id="close-phone" class="mt-4 px-4 py-2 bg-gray-600 rounded-full">Close</button>
+      <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+        <p class="text-lg animate-pulse">Calling ${friendName}...</p>
       </div>
     `;
-    document.getElementById("close-phone")?.addEventListener("click", () => {
-      modal.classList.add("hidden");
-    });
+    playSound("phone-ringing"); // Assumes you have a ringing sound file
+
+    // Simulate phone call sequence
+    setTimeout(() => {
+      modal.innerHTML = `
+        <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+          <p class="text-lg">${friendName}: Hello?</p>
+        </div>
+      `;
+      playSound("phone-pickup"); // Optional: sound for picking up
+    }, 2000); // 2 seconds of ringing
+
+    setTimeout(() => {
+      modal.innerHTML = `
+        <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+          <p class="text-lg">${friendName}: Hmm, I think it’s "${friendAnswer}" (${
+        isCorrect ? "70%" : "30%"
+      } confident)</p>
+          <button id="close-phone" class="mt-4 px-4 py-2 bg-gray-600 rounded-full hover:bg-gray-700 transition-colors">Hang Up</button>
+        </div>
+      `;
+      document.getElementById("close-phone")?.addEventListener("click", () => {
+        modal.classList.add("hidden");
+      });
+    }, 3500); // 1.5 seconds after "Hello?"
   }
 
   state.lifelinesUsed.phoneFriend = true;
   updateLifelinesUI(state.lifelinesUsed);
-  playSound("phone-friend");
   saveGame();
 }
 
 export function useAskAudience() {
   if (state.lifelinesUsed.askAudience || !state.gameStarted) return;
 
+  console.log("Ask Audience used");
   const currentQuestion = state.questions[state.currentQuestionIndex];
-  const answers = [
-    ...currentQuestion.incorrect_answers,
-    currentQuestion.correct_answer,
-  ];
-  const modal = document.getElementById("audience-modal") as HTMLDivElement;
+
+  // Get current displayed answers from buttons
+  const answerButtons = [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean);
+
+  const answers = answerButtons
+    .map((btn) => (btn ? btn.textContent?.substring(3).trim() : ""))
+    .filter((answer) => answer !== "");
 
   // Simulate audience voting
   const votes = answers.map((answer) => {
     if (answer === currentQuestion.correct_answer) {
-      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE;
+      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE; // 60% base + random 0-20%
     }
-    return Math.floor(Math.random() * 20);
+    return Math.floor(Math.random() * 20); // 0-20% for incorrect
   });
   const total = votes.reduce((sum, vote) => sum + vote, 0);
   const percentages = votes.map((vote) => Math.round((vote / total) * 100));
 
+  const modal = document.getElementById("audience-modal") as HTMLDivElement;
   if (modal) {
     modal.classList.remove("hidden");
     modal.innerHTML = `
-      <div class="bg-gray-800 p-6 rounded-lg">
-        <h3>Audience Results:</h3>
-        ${answers
-          .map(
-            (answer, i) => `
-          <p>${String.fromCharCode(65 + i)}: ${answer} - ${percentages[i]}%</p>
-        `
-          )
-          .join("")}
-        <button id="close-audience" class="mt-4 px-4 py-2 bg-gray-600 rounded-full">Close</button>
+      <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-lg">
+        <h3 class="text-xl mb-4">Audience Results:</h3>
+        <div class="space-y-4">
+          ${answers
+            .map(
+              (answer, i) => `
+            <div>
+              <div class="flex justify-between mb-1">
+                <span>${String.fromCharCode(65 + i)}: ${answer}</span>
+                <span>${percentages[i]}%</span>
+              </div>
+              <div class="w-full bg-gray-600 rounded-full h-4">
+                <div class="bg-teal-600 h-4 rounded-full" style="width: ${
+                  percentages[i]
+                }%"></div>
+              </div>
+            </div>
+          `
+            )
+            .join("")}
+        </div>
+        <button id="close-audience" class="mt-4 px-4 py-2 bg-gray-600 rounded-full hover:bg-gray-700 transition-colors">Close</button>
       </div>
     `;
     document.getElementById("close-audience")?.addEventListener("click", () => {

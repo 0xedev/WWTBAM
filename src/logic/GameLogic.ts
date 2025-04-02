@@ -286,13 +286,19 @@ export async function handleAnswer(
 function endGame(walkAway: boolean, message: string) {
   stopTimer();
 
-  // Calculate final prize
+  console.log("endGame called - walkAway:", walkAway, "message:", message);
+  console.log("Current question index:", state.currentQuestionIndex);
+  const safeHavensBelow = SAFE_HAVENS.filter(
+    (h) => h <= state.currentQuestionIndex
+  );
+  console.log("Safe havens below or at current index:", safeHavensBelow);
+  const lastSafeHaven = safeHavensBelow.pop() || 0;
+  console.log("Last safe haven:", lastSafeHaven);
+
   const prize = walkAway
-    ? PRIZE_LADDER[state.currentQuestionIndex - 1] || 0 // Walk away or win
-    : PRIZE_LADDER[
-        (SAFE_HAVENS.filter((h) => h <= state.currentQuestionIndex).pop() ||
-          0) - 1
-      ] || 0; // Lose: last safe haven or 0
+    ? PRIZE_LADDER[state.currentQuestionIndex - 1] || 0
+    : PRIZE_LADDER[lastSafeHaven - 1] || 0;
+  console.log("Calculated prize:", prize);
 
   // Reset answer buttons
   const answerButtons = [

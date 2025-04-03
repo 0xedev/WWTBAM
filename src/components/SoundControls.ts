@@ -1,4 +1,4 @@
-import { toggleMute, setVolume } from "../utils/sound";
+import { toggleMute, setVolume } from "../utils/Sound";
 
 export function renderSoundControls(container: HTMLElement) {
   container.innerHTML += `

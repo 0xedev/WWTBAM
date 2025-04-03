@@ -1,3 +1,4 @@
+/* src/styles/styles.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
@@ -43,7 +44,11 @@
   }
 
   .animate-pulse-slow {
-    animation: pulseSlow 10s ease-in-out infinite;
+    animation: pulseSlow 8s ease-in-out infinite;
+  }
+
+  .animate-glow {
+    animation: glow 2s ease-in-out infinite;
   }
 }
 
@@ -60,12 +65,24 @@
 
 @keyframes pulseSlow {
   0% {
-    opacity: 0.3;
+    opacity: 0.2;
   }
   50% {
-    opacity: 0.6;
+    opacity: 0.5;
   }
   100% {
-    opacity: 0.3;
+    opacity: 0.2;
+  }
+}
+
+@keyframes glow {
+  0% {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
+  }
+  50% {
+    text-shadow: 0 0 20px rgba(255, 215, 0, 0.8);
+  }
+  100% {
+    text-shadow: 0 0 10px rgba(255, 215, 0, 0.5);
   }
 }

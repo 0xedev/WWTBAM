@@ -1,3 +1,4 @@
+<!-- index.html -->
 <!DOCTYPE html>
 <html lang="en">
   <head>
@@ -14,19 +15,26 @@
       content='{"version":"next","imageUrl":"https://wwtbam-rho.vercel.app/og-image.png","button":{"title":"Play Now","action":{"type":"launch_frame","name":"WWTBAM","url":"https://wwtbam-rho.vercel.app/","splashImageUrl":"https://wwtbam-rho.vercel.app/splash.png","splashBackgroundColor":"#000000"}}}'
     />
     <style>
-      /* Existing styles */
       body {
-        margin: 0; /* Reset default margins */
+        margin: 0;
+        background: linear-gradient(
+          to bottom,
+          #1e3a8a,
+          #000000
+        ); /* Match the difficulty selection gradient */
       }
       #app-container {
-        max-width: 424px; /* Farcaster web modal width */
-        max-height: 695px; /* Farcaster web modal height */
-        overflow-y: auto; /* Scrollable if content exceeds */
+        max-width: 424px;
+        height: 100vh; /* Ensure it takes the full viewport height */
+        overflow-y: auto;
+        display: flex;
+        justify-content: center;
+        align-items: center;
       }
     </style>
     <script type="module" src="https://esm.sh/@farcaster/frame-sdk"></script>
   </head>
-  <body class="bg-gradient-to-b from-blue-900 to-black text-white font-sans">
+  <body class="text-white font-sans">
     <div id="app-container" class="relative w-full p-4">
       <div id="game-container"></div>
     </div>

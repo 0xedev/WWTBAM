@@ -37,6 +37,7 @@ export function clearGame() {
   localStorage.removeItem("wwtbam-game-state");
 }
 
+// src/logic/GameLogic.ts
 export function startGame(
   difficulty: "easy" | "medium" | "hard",
   category?: number
@@ -66,6 +67,9 @@ export function startGame(
   const difficultySelection = document.getElementById(
     "difficulty-selection"
   ) as HTMLDivElement;
+  const togglePrizeLadderBtn = document.getElementById(
+    "toggle-prize-ladder"
+  ) as HTMLButtonElement;
 
   if (!gameUi || !difficultySelection) {
     console.error(
@@ -89,6 +93,11 @@ export function startGame(
   console.log("Hiding difficulty selection, showing game UI");
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
+
+  // Show the prize ladder toggle button
+  if (togglePrizeLadderBtn) {
+    togglePrizeLadderBtn.classList.remove("hidden");
+  }
 
   // Ensure all modals are hidden on start
   const walkAwayModal = document.getElementById(
@@ -121,19 +130,25 @@ export function startGame(
     })
     .catch((error) => {
       console.error("Failed to fetch questions:", error);
-      state.questions = [
-        {
-          question: "What is 2 + 2?",
-          correct_answer: "4",
-          incorrect_answers: ["3", "5", "22"],
-          category: "",
-          type: "",
-          difficulty: "",
-        },
-      ];
-      state.currentQuestionIndex = 0;
-      displayQuestion();
-      saveGame();
+      const modal = document.getElementById("modals-container") as HTMLElement;
+      if (modal) {
+        modal.innerHTML = `
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+              <h2 class="text-xl mb-4 text-red-400">Error</h2>
+              <p class="text-lg mb-4">${error.message}</p>
+              <button id="close-error" class="px-4 py-2 bg-gray-600 rounded-full hover:bg-gray-700">OK</button>
+            </div>
+          </div>
+        `;
+        document
+          .getElementById("close-error")
+          ?.addEventListener("click", () => {
+            modal.innerHTML = "";
+            gameUi?.classList.add("hidden");
+            difficultySelection?.classList.remove("hidden");
+          });
+      }
     });
 }
 
@@ -346,6 +361,7 @@ export async function handleAnswer(
   }
 }
 
+// src/logic/GameLogic.ts
 export async function endGame(walkAway: boolean, message: string) {
   stopTimer();
 
@@ -371,7 +387,7 @@ export async function endGame(walkAway: boolean, message: string) {
       clientFid: 0,
       added: false,
       safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
-      notificationDetails: null, // Mock notificationDetails as null
+      notificationDetails: null,
     },
   };
 
@@ -381,7 +397,7 @@ export async function endGame(walkAway: boolean, message: string) {
     context = await sdk.context;
     if (!context && isFarcasterEnvironment) {
       console.warn("sdk.context is undefined even in Farcaster environment");
-      context = mockContext; // Fallback to mock context
+      context = mockContext;
     } else if (!context) {
       console.log(
         "Not in Farcaster environment, using mock context in endGame"
@@ -429,10 +445,14 @@ export async function endGame(walkAway: boolean, message: string) {
   const difficultySelection = document.getElementById(
     "difficulty-selection"
   ) as HTMLDivElement;
+  const togglePrizeLadderBtn = document.getElementById(
+    "toggle-prize-ladder"
+  ) as HTMLButtonElement;
   if (gameUi) gameUi.classList.add("hidden");
   else console.error("Game UI not found in endGame");
   if (difficultySelection) difficultySelection.classList.remove("hidden");
   else console.error("Difficulty selection not found in endGame");
+  if (togglePrizeLadderBtn) togglePrizeLadderBtn.classList.add("hidden");
 
   // Show prize announcement modal
   const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;

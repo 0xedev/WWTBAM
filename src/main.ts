@@ -1,3 +1,4 @@
+// src/main.ts
 import { sdk } from "@farcaster/frame-sdk";
 import { renderDifficultySelection } from "./components/DifficultySelection";
 import { renderGameUI } from "./components/GameUI";
@@ -8,7 +9,7 @@ import { renderSoundControls } from "./components/SoundControls";
 import "./styles/styles.css";
 
 // Mock context for local development
-const isFarcasterEnvironment = !!window.parent; // Rough check for iframe-like embedding
+const isFarcasterEnvironment = !!window.parent;
 const mockContext = {
   user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
   client: {
@@ -34,7 +35,7 @@ async function initializeApp() {
       context = mockContext;
     } else if (!context) {
       console.warn("sdk.context is undefined even in Farcaster environment");
-      context = mockContext; // Fallback anyway
+      context = mockContext;
     }
   } catch (error) {
     console.error("Error resolving sdk.context:", error);
@@ -59,7 +60,7 @@ async function initializeApp() {
     <div id="difficulty-selection-container"></div>
     <div id="game-ui-container"></div>
     <div id="prize-ladder-container"></div>
-    <div id="lifelines-container"></div>
+    <div id="lifelines-container" class="hidden"></div>
     <div id="modals-container"></div>
   `;
 
@@ -78,7 +79,6 @@ async function initializeApp() {
   );
   renderModals(document.getElementById("modals-container") as HTMLElement);
 
-  // Only call ready() in Farcaster environment
   if (isFarcasterEnvironment) {
     try {
       await sdk.actions.ready();

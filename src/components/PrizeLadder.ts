@@ -1,9 +1,11 @@
+// src/components/PrizeLadder.ts
 import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/Constants";
+import { state } from "../logic/GameLogic"; // Import game state to check if game has started
 
 export function renderPrizeLadder(container: HTMLElement) {
   container.innerHTML = `
-    <button id="toggle-prize-ladder" class="px-3 py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors text-sm md:text-base">Show Prize Ladder</button>
-    <div id="prize-ladder-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ">
+    <button id="toggle-prize-ladder" class="px-3 py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors text-sm md:text-base hidden">Show Prize Ladder</button>
+    <div id="prize-ladder-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
       <div class="bg-gray-800 p-4 rounded-lg max-h-[80vh] overflow-y-auto w-full max-w-md">
         <h2 class="text-xl md:text-2xl font-bold mb-4 text-yellow-400">Prize Ladder</h2>
         <div id="prize-ladder" class="space-y-2"></div>
@@ -19,6 +21,11 @@ export function renderPrizeLadder(container: HTMLElement) {
     "close-prize-ladder"
   ) as HTMLButtonElement;
   const modal = document.getElementById("prize-ladder-modal") as HTMLDivElement;
+
+  // Show the toggle button only if the game has started
+  if (state.gameStarted) {
+    toggleBtn.classList.remove("hidden");
+  }
 
   toggleBtn.onclick = () => modal.classList.remove("hidden");
   closeBtn.onclick = () => modal.classList.add("hidden");
@@ -47,5 +54,5 @@ export function updatePrizeLadder(currentQuestionIndex: number) {
     `;
   })
     .reverse()
-    .join(""); // Reverse to show highest prize at top
+    .join("");
 }

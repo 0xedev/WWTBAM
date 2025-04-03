@@ -1,12 +1,14 @@
+// src/components/DifficultySelection.ts
 import { sdk } from "@farcaster/frame-sdk";
 import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
+import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/Constants";
 
 // Mock context for local development
 const isLocalDev =
   window.location.hostname === "localhost" ||
   window.location.hostname === "127.0.0.1";
-const isFarcasterEnvironment = !!window.parent && !isLocalDev; // Improved check
+const isFarcasterEnvironment = !!window.parent && !isLocalDev;
 const mockContext = {
   user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
   client: {
@@ -28,7 +30,7 @@ export async function renderDifficultySelection(container: HTMLElement) {
     context = await sdk.context;
     if (!context && isFarcasterEnvironment) {
       console.warn("sdk.context is undefined even in Farcaster environment");
-      context = mockContext; // Fallback to mock context
+      context = mockContext;
     } else if (!context) {
       console.log(
         "Not in Farcaster environment, using mock context in DifficultySelection"
@@ -45,57 +47,153 @@ export async function renderDifficultySelection(container: HTMLElement) {
     ? `Welcome, ${user.username}!`
     : `Welcome, FID ${user.fid}!`;
 
+  // Move savedGame declaration to the top
+  const savedGame = loadGame();
+
   container.innerHTML = `
-    <div id="difficulty-selection" class="relative text-center min-h-screen flex flex-col items-center justify-center bg-gradient-to-b from-gray-900 via-gray-800 to-gray-900 overflow-hidden">
+    <div id="difficulty-selection" class="relative flex flex-col items-center justify-center h-full bg-gradient-to-b from-blue-950 via-blue-900 to-black overflow-hidden">
       <!-- Spotlight Background Effect -->
-      <div class="absolute inset-0 bg-gradient-to-b from-transparent via-yellow-900/20 to-transparent animate-pulse-slow"></div>
+      <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.2)_0%,transparent_70%)] animate-pulse-slow"></div>
+
+      <!-- Sound Controls -->
+      <div id="sound-controls-container" class="absolute top-4 right-4"></div>
 
       <!-- Title -->
-      <h1 class="text-4xl md:text-6xl font-extrabold mb-8 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-300 to-yellow-500 tracking-wide animate-fade-in">
+      <h1 class="text-4xl md:text-5xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-400 via-yellow-200 to-yellow-400 tracking-wide animate-fade-in shadow-lg">
         Who Wants to Be a Millionaire
       </h1>
 
       <!-- Welcome Message -->
-      <p class="text-lg md:text-2xl mb-4 text-gray-300 font-light animate-fade-in-delay-1">
+      <p class="text-lg md:text-xl mb-2 text-gray-200 font-light animate-fade-in-delay-1">
         ${welcomeMessage}
       </p>
 
       <!-- Prompt -->
-      <p class="text-md md:text-xl mb-8 text-gray-400 font-medium animate-fade-in-delay-2">
+      <p class="text-md md:text-lg mb-6 text-gray-300 font-medium animate-fade-in-delay-2">
         Select Category and Difficulty
       </p>
 
       <!-- Category Dropdown -->
-      <div class="flex flex-col items-center mb-8 w-full max-w-xs animate-fade-in-delay-3">
-        <select id="category-select" class="w-full px-4 py-2 bg-gray-700 text-gray-200 rounded-lg border border-gray-600 focus:outline-none focus:ring-2 focus:ring-yellow-500 transition-all duration-300">
+      <div class="flex flex-col items-center mb-6 w-full max-w-xs animate-fade-in-delay-3">
+        <select id="category-select" class="w-full px-4 py-2 bg-gray-800 text-gray-200 rounded-lg border-2 border-yellow-500 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 shadow-md hover:bg-gray-700">
           <option value="">Any Category</option>
         </select>
       </div>
 
       <!-- Difficulty Buttons -->
-      <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-6 mb-8 animate-fade-in-delay-4">
-        <button id="easy-btn" class="px-6 py-3 bg-gradient-to-r from-green-500 to-green-700 text-white font-semibold rounded-full shadow-lg hover:from-green-600 hover:to-green-800 hover:scale-105 transition-all duration-300">
+      <div class="grid grid-cols-3 gap-4 mb-6 animate-fade-in-delay-4">
+        <button id="easy-btn" class="px-6 py-3 bg-gradient-to-r from-green-600 to-green-800 text-white font-semibold rounded-full shadow-lg hover:from-green-700 hover:to-green-900 hover:scale-105 transition-all duration-300">
           Easy
         </button>
-        <button id="medium-btn" class="px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-700 text-white font-semibold rounded-full shadow-lg hover:from-yellow-600 hover:to-yellow-800 hover:scale-105 transition-all duration-300">
+        <button id="medium-btn" class="px-6 py-3 bg-gradient-to-r from-yellow-600 to-yellow-800 text-white font-semibold rounded-full shadow-lg hover:from-yellow-700 hover:to-yellow-900 hover:scale-105 transition-all duration-300">
           Medium
         </button>
-        <button id="hard-btn" class="px-6 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold rounded-full shadow-lg hover:from-red-600 hover:to-red-800 hover:scale-105 transition-all duration-300">
+        <button id="hard-btn" class="px-6 py-3 bg-gradient-to-r from-red-600 to-red-800 text-white font-semibold rounded-full shadow-lg hover:from-red-700 hover:to-red-900 hover:scale-105 transition-all duration-300">
           Hard
         </button>
       </div>
 
-      <!-- Resume Game and Show Prize Ladder Buttons -->
-      <div class="flex flex-col md:flex-row justify-center space-y-4 md:space-y-0 md:space-x-6 animate-fade-in-delay-5">
-        <button id="resume-btn" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-700 text-white font-semibold rounded-full shadow-lg hover:from-purple-600 hover:to-purple-800 hover:scale-105 transition-all duration-300 hidden">
-          Resume Game
+      <!-- Action buttons -->
+      <div class="relative z-10 flex flex-col sm:flex-row gap-4">
+        ${
+          savedGame
+            ? `<button id="resume-btn" class="px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium rounded-full shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300 flex items-center justify-center">
+                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                </svg>
+                Resume Game
+              </button>`
+            : ""
+        }
+        <button id="show-prize-ladder-btn" class="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-700 text-white font-medium rounded-full shadow-lg hover:shadow-gray-600/40 hover:scale-105 transition-all duration-300 flex items-center justify-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+          </svg>
+          Prize Ladder
         </button>
-        <button id="show-prize-ladder-btn" class="px-6 py-3 bg-gradient-to-r from-gray-600 to-gray-800 text-gray-200 font-semibold rounded-full shadow-lg hover:from-gray-700 hover:to-gray-900 hover:scale-105 transition-all duration-300">
-          Show Prize Ladder
-        </button>
+      </div>
+      
+      <!-- Prize ladder modal (hidden by default) -->
+      <div id="prize-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/70 backdrop-blur-sm hidden transition-opacity duration-300">
+        <div class="bg-gradient-to-b from-gray-800 to-gray-900 p-6 rounded-xl border border-gray-700 w-11/12 max-w-md shadow-2xl">
+          <div class="flex justify-between items-center mb-4">
+            <h2 class="text-2xl font-bold text-yellow-400">Prize Ladder</h2>
+            <button id="close-prize-ladder" class="text-gray-400 hover:text-white transition-colors">
+              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+              </svg>
+            </button>
+          </div>
+          <div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            <ul class="space-y-2">
+              ${PRIZE_LADDER.map((prize, index) => {
+                const isSafe = SAFE_HAVENS.includes(index + 1);
+                const isMillionaire = index === PRIZE_LADDER.length - 1;
+
+                return `
+                <li class="flex items-center justify-between py-2 px-3 rounded ${
+                  isMillionaire
+                    ? "bg-gradient-to-r from-yellow-500/30 to-yellow-700/30 border border-yellow-500/50"
+                    : isSafe
+                    ? "bg-gradient-to-r from-green-500/20 to-green-700/20 border border-green-500/40"
+                    : "border-b border-gray-700"
+                }">
+                  <span class="font-medium text-sm ${
+                    isMillionaire
+                      ? "text-yellow-300"
+                      : isSafe
+                      ? "text-green-400"
+                      : "text-gray-300"
+                  }">Question ${index + 1}</span>
+                  <span class="font-bold ${
+                    isMillionaire
+                      ? "text-yellow-300"
+                      : isSafe
+                      ? "text-green-400"
+                      : "text-white"
+                  }">$${prize.toLocaleString()}</span>
+                </li>
+                `;
+              }).join("")}
+            </ul>
+          </div>
+          <div class="mt-6 flex justify-center">
+            <div class="text-center text-sm text-gray-400 mb-2">
+              <span class="inline-block w-3 h-3 bg-green-500/40 border border-green-500 rounded-sm mr-1"></span> Safe Havens
+            </div>
+          </div>
+        </div>
       </div>
     </div>
   `;
+
+  const styleElement = document.createElement("style");
+  styleElement.textContent = `
+    @keyframes float {
+      0%, 100% { transform: translateY(0); }
+      50% { transform: translateY(-20px); }
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(75, 85, 99, 0.2);
+      border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: rgba(107, 114, 128, 0.5);
+      border-radius: 10px;
+    }
+    
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: rgba(156, 163, 175, 0.5);
+    }
+  `;
+  document.head.appendChild(styleElement);
 
   const categorySelect = document.getElementById(
     "category-select"
@@ -104,6 +202,13 @@ export async function renderDifficultySelection(container: HTMLElement) {
   const mediumBtn = document.getElementById("medium-btn") as HTMLButtonElement;
   const hardBtn = document.getElementById("hard-btn") as HTMLButtonElement;
   const resumeBtn = document.getElementById("resume-btn") as HTMLButtonElement;
+  const showPrizeLadderBtn = document.getElementById(
+    "show-prize-ladder-btn"
+  ) as HTMLButtonElement;
+  const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
+  const closePrizeLadderBtn = document.getElementById(
+    "close-prize-ladder"
+  ) as HTMLButtonElement;
 
   fetchCategories().then((categories) => {
     categories.forEach((category) => {
@@ -114,20 +219,36 @@ export async function renderDifficultySelection(container: HTMLElement) {
     });
   });
 
-  const savedGame = loadGame();
-  if (savedGame) {
-    resumeBtn.classList.remove("hidden");
-    resumeBtn.addEventListener("click", () => resumeGame(savedGame));
-  }
-
   const getCategoryId = () => {
     const value = categorySelect.value;
     return value ? parseInt(value, 10) : undefined;
   };
+
+  if (resumeBtn) {
+    resumeBtn.addEventListener("click", () => {
+      if (savedGame) {
+        resumeGame(savedGame);
+      }
+    });
+  }
 
   easyBtn.addEventListener("click", () => startGame("easy", getCategoryId()));
   mediumBtn.addEventListener("click", () =>
     startGame("medium", getCategoryId())
   );
   hardBtn.addEventListener("click", () => startGame("hard", getCategoryId()));
+  showPrizeLadderBtn.addEventListener("click", () => {
+    prizeModal.classList.remove("hidden");
+  });
+
+  closePrizeLadderBtn.addEventListener("click", () => {
+    prizeModal.classList.add("hidden");
+  });
+
+  // Close modal when clicking outside
+  prizeModal.addEventListener("click", (event) => {
+    if (event.target === prizeModal) {
+      prizeModal.classList.add("hidden");
+    }
+  });
 }

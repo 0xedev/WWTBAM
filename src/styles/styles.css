@@ -43,8 +43,12 @@
     opacity: 0;
   }
 
-  .animate-pulse-slow {
-    animation: pulseSlow 8s ease-in-out infinite;
+  .animate-spotlight {
+    animation: spotlight 6s ease-in-out infinite;
+  }
+
+  .animate-shine {
+    animation: shine 3s infinite;
   }
 
   .animate-glow {
@@ -63,15 +67,27 @@
   }
 }
 
-@keyframes pulseSlow {
+@keyframes spotlight {
   0% {
-    opacity: 0.2;
+    transform: scale(1);
+    opacity: 0.3;
   }
   50% {
+    transform: scale(1.2);
     opacity: 0.5;
   }
   100% {
-    opacity: 0.2;
+    transform: scale(1);
+    opacity: 0.3;
+  }
+}
+
+@keyframes shine {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
   }
 }
 

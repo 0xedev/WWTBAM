@@ -1,18 +1,17 @@
-import { GameState } from "../utils/Types";
+import { GameState, TriviaQuestion } from "../utils/Types";
 import { fetchQuestions } from "./Api";
-import { updatePrizeLadder } from "../components/PrizeLadder";
-import { updateAnswers } from "../components/GameUI";
+import { updatePrizeLadder } from "../components/PrizeLadder"; // Correct import
+import { updateGameUI } from "../uiUpdates"; // Correct import
 import {
   PRIZE_LADDER,
   SAFE_HAVENS,
-  PHONE_FRIEND_CORRECT_PROBABILITY, // Add this
+  PHONE_FRIEND_CORRECT_PROBABILITY,
   AUDIENCE_VOTE_CORRECT_PERCENTAGE,
   QUESTION_TIMER_SECONDS,
 } from "../utils/Constants";
 import { playSound } from "../utils/Sound";
 import { sdk } from "@farcaster/frame-sdk";
 import axios from "axios";
-
 import { updateLifelinesUI } from "../uiUpdates";
 
 let timer: number | null = null;
@@ -59,6 +58,8 @@ export function startGame(
       askAudience: false,
     },
     timeLeft: QUESTION_TIMER_SECONDS,
+    difficulty,
+    category,
   };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
@@ -119,24 +120,25 @@ export function startGame(
     });
 }
 
-export function resumeGame(): boolean {
-  const savedState = loadGame();
+export function resumeGame(savedGame: GameState): boolean {
   if (
-    !savedState ||
-    savedState.currentQuestionIndex >= savedState.questions.length ||
-    !savedState.gameStarted
+    !savedGame ||
+    savedGame.currentQuestionIndex >= savedGame.questions.length ||
+    !savedGame.gameStarted
   ) {
     clearGame();
     return false;
   }
+
+  // Restore the state
   state = {
-    ...savedState,
+    ...savedGame,
     gameStarted: true,
-    lifelinesUsed: savedState.lifelinesUsed || {
+    lifelinesUsed: savedGame.lifelinesUsed || {
       fiftyFifty: false,
       phoneFriend: false,
       askAudience: false,
-    }, // Ensure lifelines are defined
+    },
   };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
@@ -150,17 +152,46 @@ export function resumeGame(): boolean {
 
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
-  displayQuestion();
+
+  // Update UI based on restored state
+  const gameUIContainer = document.getElementById(
+    "game-ui-container"
+  ) as HTMLElement;
+  const currentQuestion = state.questions[state.currentQuestionIndex];
+  updateGameUI(
+    currentQuestion,
+    getAnswers(currentQuestion),
+    getAnswerButtons(),
+    handleAnswer
+  );
+  updatePrizeLadder(state.currentQuestionIndex);
+  updateLifelinesUI(state.lifelinesUsed);
+
+  startTimer(() => endGame(false, "Time’s up!"));
   return true;
 }
 
-// ... (other imports and code unchanged)
+// Helper functions to get answers and buttons (used in displayQuestion and resumeGame)
+function getAnswers(question: TriviaQuestion): string[] {
+  return [...question.incorrect_answers, question.correct_answer].sort(
+    () => Math.random() - 0.5
+  );
+}
+
+function getAnswerButtons(): HTMLButtonElement[] {
+  return [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean);
+}
 
 function displayQuestion() {
   const question = state.questions[state.currentQuestionIndex];
-  const answers = [...question.incorrect_answers, question.correct_answer].sort(
-    () => Math.random() - 0.5
-  );
+  const answers = getAnswers(question);
+  const answerButtons = getAnswerButtons();
+
   const questionEl = document.getElementById("question") as HTMLDivElement;
   if (questionEl) {
     console.log("Displaying question:", question.question);
@@ -170,25 +201,18 @@ function displayQuestion() {
   }
 
   // Reset all answer buttons before updating
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
-
   answerButtons.forEach((btn) => {
     if (btn) {
       btn.className =
         "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
-      btn.disabled = false; // Re-enable buttons
-      btn.classList.remove("hidden"); // Ensure all buttons are visible
-      btn.onclick = null; // Clear previous event listeners
+      btn.disabled = false;
+      btn.classList.remove("hidden");
+      btn.onclick = null;
     }
   });
 
   console.log("Updating answers:", answers);
-  updateAnswers(answers); // This will set new text and onclick handlers
+  updateGameUI(question, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
   startTimer(() => endGame(false, "Time’s up!"));
@@ -197,6 +221,9 @@ function displayQuestion() {
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.remove("hidden");
 }
+
+// The rest of GameLogic.ts remains unchanged
+// ... (handleAnswer, endGame, startTimer, stopTimer, useFiftyFifty, usePhoneFriend, useAskAudience, walkAway)
 
 // handle answer function
 export async function handleAnswer(

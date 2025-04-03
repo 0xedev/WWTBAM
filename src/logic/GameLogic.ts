@@ -360,8 +360,39 @@ export async function endGame(walkAway: boolean, message: string) {
     : PRIZE_LADDER[lastSafeHaven - 1] || 0;
   console.log("Calculated prize:", prize);
 
+  // Mock context for local development
+  const isLocalDev =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const isFarcasterEnvironment = !!window.parent && !isLocalDev;
+  const mockContext = {
+    user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
+    client: {
+      clientFid: 0,
+      added: false,
+      safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
+      notificationDetails: null, // Mock notificationDetails as null
+    },
+  };
+
   // Send notification if notifications are enabled
-  const context = await sdk.context;
+  let context;
+  try {
+    context = await sdk.context;
+    if (!context && isFarcasterEnvironment) {
+      console.warn("sdk.context is undefined even in Farcaster environment");
+      context = mockContext; // Fallback to mock context
+    } else if (!context) {
+      console.log(
+        "Not in Farcaster environment, using mock context in endGame"
+      );
+      context = mockContext;
+    }
+  } catch (error) {
+    console.error("Error resolving sdk.context in endGame:", error);
+    context = mockContext;
+  }
+
   const notificationDetails = context.client.notificationDetails;
   if (notificationDetails && prize > 0) {
     const notificationPayload = {

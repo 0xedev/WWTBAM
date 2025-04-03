@@ -1,9 +1,9 @@
-import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/constants";
+import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/Constants";
 
 export function renderPrizeLadder(container: HTMLElement) {
   container.innerHTML = `
     <button id="toggle-prize-ladder" class="px-3 py-2 bg-purple-600 rounded-full hover:bg-purple-700 transition-colors text-sm md:text-base">Show Prize Ladder</button>
-    <div id="prize-ladder-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center hidden">
+    <div id="prize-ladder-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center ">
       <div class="bg-gray-800 p-4 rounded-lg max-h-[80vh] overflow-y-auto w-full max-w-md">
         <h2 class="text-xl md:text-2xl font-bold mb-4 text-yellow-400">Prize Ladder</h2>
         <div id="prize-ladder" class="space-y-2"></div>

@@ -1,4 +1,4 @@
-import { GameState } from "../utils/types";
+import { GameState } from "../utils/Types";
 import { fetchQuestions } from "./Api";
 import { updatePrizeLadder } from "../components/PrizeLadder";
 import { updateAnswers } from "../components/GameUI";
@@ -8,8 +8,10 @@ import {
   PHONE_FRIEND_CORRECT_PROBABILITY, // Add this
   AUDIENCE_VOTE_CORRECT_PERCENTAGE,
   QUESTION_TIMER_SECONDS,
-} from "../utils/constants";
-import { playSound } from "../utils/sound";
+} from "../utils/Constants";
+import { playSound } from "../utils/Sound";
+import { sdk } from "@farcaster/frame-sdk";
+import axios from "axios";
 
 import { updateLifelinesUI } from "../uiUpdates";
 
@@ -283,23 +285,40 @@ export async function handleAnswer(
 }
 // ... (other functions unchanged)
 
-function endGame(walkAway: boolean, message: string) {
+export async function endGame(walkAway: boolean, message: string) {
   stopTimer();
 
-  console.log("endGame called - walkAway:", walkAway, "message:", message);
-  console.log("Current question index:", state.currentQuestionIndex);
   const safeHavensBelow = SAFE_HAVENS.filter(
     (h) => h <= state.currentQuestionIndex
   );
-  console.log("Safe havens below or at current index:", safeHavensBelow);
+
   const lastSafeHaven = safeHavensBelow.pop() || 0;
-  console.log("Last safe haven:", lastSafeHaven);
 
   const prize = walkAway
     ? PRIZE_LADDER[state.currentQuestionIndex - 1] || 0
     : PRIZE_LADDER[lastSafeHaven - 1] || 0;
   console.log("Calculated prize:", prize);
 
+  // Send notification if notifications are enabled
+  const context = await sdk.context; // Await the promise
+  const notificationDetails = context.client.notificationDetails;
+  if (notificationDetails && prize > 0) {
+    const notificationPayload = {
+      notificationId: `wwtbam-${Date.now()}`,
+      title: "WWTBAM Update",
+      body: `You won $${prize.toLocaleString()}!`,
+      targetUrl: "https://yourdomain.com/",
+      tokens: [notificationDetails.token],
+    };
+    try {
+      await axios.post(notificationDetails.url, notificationPayload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log("Notification sent successfully");
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+    }
+  }
   // Reset answer buttons
   const answerButtons = [
     document.getElementById("answer-a") as HTMLButtonElement,

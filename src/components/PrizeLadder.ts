@@ -123,7 +123,7 @@ export function updatePrizeLadder(currentQuestionIndex: number) {
   prizeLadder.innerHTML = PRIZE_LADDER.map((amount, index) => {
     const isCurrent = index === currentQuestionIndex;
     const isSafeHaven = SAFE_HAVENS.includes(index + 1);
-    const isMillionaire = index === PRIZE_LADDER.length - 1;
+    // const isMillionaire = index === PRIZE_LADDER.length - 1;
     const bgClass = isCurrent
       ? "bg-gradient-to-r from-yellow-400/30 to-yellow-600/30 border border-yellow-500/50"
       : isSafeHaven

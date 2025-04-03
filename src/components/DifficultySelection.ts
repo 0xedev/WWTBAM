@@ -3,7 +3,10 @@ import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
 
 // Mock context for local development
-const isFarcasterEnvironment = !!window.parent; // Rough check for iframe-like embedding
+const isLocalDev =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+const isFarcasterEnvironment = !!window.parent && !isLocalDev; // Improved check
 const mockContext = {
   user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
   client: {
@@ -23,14 +26,14 @@ export async function renderDifficultySelection(container: HTMLElement) {
   let context;
   try {
     context = await sdk.context;
-    if (!context && !isFarcasterEnvironment) {
+    if (!context && isFarcasterEnvironment) {
+      console.warn("sdk.context is undefined even in Farcaster environment");
+      context = mockContext; // Fallback to mock context
+    } else if (!context) {
       console.log(
         "Not in Farcaster environment, using mock context in DifficultySelection"
       );
       context = mockContext;
-    } else if (!context) {
-      console.warn("sdk.context is undefined even in Farcaster environment");
-      context = mockContext; // Fallback anyway
     }
   } catch (error) {
     console.error("Error resolving sdk.context in DifficultySelection:", error);
@@ -64,7 +67,7 @@ export async function renderDifficultySelection(container: HTMLElement) {
   const categorySelect = document.getElementById(
     "category-select"
   ) as HTMLSelectElement;
-  const easyBtn = document.getElementById("easy-btn") as HTMLButtonElement; // Fixed typo: 'get' -> 'getElementById'
+  const easyBtn = document.getElementById("easy-btn") as HTMLButtonElement;
   const mediumBtn = document.getElementById("medium-btn") as HTMLButtonElement;
   const hardBtn = document.getElementById("hard-btn") as HTMLButtonElement;
   const resumeBtn = document.getElementById("resume-btn") as HTMLButtonElement;

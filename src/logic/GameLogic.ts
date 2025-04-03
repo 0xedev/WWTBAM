@@ -90,6 +90,23 @@ export function startGame(
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
 
+  // Ensure all modals are hidden on start
+  const walkAwayModal = document.getElementById(
+    "walk-away-modal"
+  ) as HTMLDivElement;
+  const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
+  const phoneFriendModal = document.getElementById(
+    "phone-friend-modal"
+  ) as HTMLDivElement;
+  const audienceModal = document.getElementById(
+    "audience-modal"
+  ) as HTMLDivElement;
+  [walkAwayModal, prizeModal, phoneFriendModal, audienceModal].forEach(
+    (modal) => {
+      if (modal) modal.classList.add("hidden");
+    }
+  );
+
   // Update lifeline UI immediately after state reset
   updateLifelinesUI(state.lifelinesUsed);
   console.log("Lifelines reset and UI updated:", state.lifelinesUsed);
@@ -152,6 +169,23 @@ export function resumeGame(savedGame: GameState): boolean {
 
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
+
+  // Ensure all modals are hidden on resume
+  const walkAwayModal = document.getElementById(
+    "walk-away-modal"
+  ) as HTMLDivElement;
+  const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
+  const phoneFriendModal = document.getElementById(
+    "phone-friend-modal"
+  ) as HTMLDivElement;
+  const audienceModal = document.getElementById(
+    "audience-modal"
+  ) as HTMLDivElement;
+  [walkAwayModal, prizeModal, phoneFriendModal, audienceModal].forEach(
+    (modal) => {
+      if (modal) modal.classList.add("hidden");
+    }
+  );
 
   // Update UI based on restored state
   const currentQuestion = state.questions[state.currentQuestionIndex];
@@ -281,6 +315,21 @@ export async function handleAnswer(
           "p"
         )!.innerHTML = `Would you like to walk away with <span class="text-yellow-400 font-bold">$${prize.toLocaleString()}</span>?`;
         walkAwayModal.classList.remove("hidden");
+
+        // Add event listeners for Yes/No buttons
+        const yesBtn = document.getElementById(
+          "walk-away-yes"
+        ) as HTMLButtonElement;
+        const noBtn = document.getElementById(
+          "walk-away-no"
+        ) as HTMLButtonElement;
+        if (yesBtn && noBtn) {
+          yesBtn.onclick = () => walkAway(true);
+          noBtn.onclick = () => walkAway(false);
+        } else {
+          console.error("Walk away buttons not found");
+        }
+
         return; // Wait for user decision before proceeding
       }
     }

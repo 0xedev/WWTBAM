@@ -1,5 +1,5 @@
 import axios from "axios";
-import { TriviaQuestion } from "../utils/types";
+import { TriviaQuestion } from "../utils/Types";
 
 export async function fetchQuestions(
   difficulty: string,

@@ -1,17 +1,18 @@
-import { GameState } from "../utils/types";
+import { GameState, TriviaQuestion } from "../utils/Types";
 import { fetchQuestions } from "./Api";
 import { updatePrizeLadder } from "../components/PrizeLadder";
+import { updateQuestionUI, updateLifelinesUI } from "../uiUpdates";
 import { updateAnswers } from "../components/GameUI";
 import {
   PRIZE_LADDER,
   SAFE_HAVENS,
-  PHONE_FRIEND_CORRECT_PROBABILITY, // Add this
+  PHONE_FRIEND_CORRECT_PROBABILITY,
   AUDIENCE_VOTE_CORRECT_PERCENTAGE,
   QUESTION_TIMER_SECONDS,
-} from "../utils/constants";
-import { playSound } from "../utils/sound";
-
-import { updateLifelinesUI } from "../uiUpdates";
+} from "../utils/Constants";
+import { playSound } from "../utils/Sound";
+import { sdk } from "@farcaster/frame-sdk";
+import axios from "axios";
 
 let timer: number | null = null;
 
@@ -57,6 +58,8 @@ export function startGame(
       askAudience: false,
     },
     timeLeft: QUESTION_TIMER_SECONDS,
+    difficulty,
+    category,
   };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
@@ -117,24 +120,25 @@ export function startGame(
     });
 }
 
-export function resumeGame(): boolean {
-  const savedState = loadGame();
+export function resumeGame(savedGame: GameState): boolean {
   if (
-    !savedState ||
-    savedState.currentQuestionIndex >= savedState.questions.length ||
-    !savedState.gameStarted
+    !savedGame ||
+    savedGame.currentQuestionIndex >= savedGame.questions.length ||
+    !savedGame.gameStarted
   ) {
     clearGame();
     return false;
   }
+
+  // Restore the state
   state = {
-    ...savedState,
+    ...savedGame,
     gameStarted: true,
-    lifelinesUsed: savedState.lifelinesUsed || {
+    lifelinesUsed: savedGame.lifelinesUsed || {
       fiftyFifty: false,
       phoneFriend: false,
       askAudience: false,
-    }, // Ensure lifelines are defined
+    },
   };
 
   const gameUi = document.getElementById("game-ui") as HTMLDivElement;
@@ -148,17 +152,40 @@ export function resumeGame(): boolean {
 
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
-  displayQuestion();
+
+  // Update UI based on restored state
+  const currentQuestion = state.questions[state.currentQuestionIndex];
+  const answers = getAnswers(currentQuestion);
+  const answerButtons = getAnswerButtons();
+  updateQuestionUI(currentQuestion, answers, answerButtons, handleAnswer);
+  updatePrizeLadder(state.currentQuestionIndex);
+  updateLifelinesUI(state.lifelinesUsed);
+
+  startTimer(() => endGame(false, "Time’s up!"));
   return true;
 }
 
-// ... (other imports and code unchanged)
+// Helper functions to get answers and buttons (used in displayQuestion and resumeGame)
+function getAnswers(question: TriviaQuestion): string[] {
+  return [...question.incorrect_answers, question.correct_answer].sort(
+    () => Math.random() - 0.5
+  );
+}
+
+function getAnswerButtons(): HTMLButtonElement[] {
+  return [
+    document.getElementById("answer-a") as HTMLButtonElement,
+    document.getElementById("answer-b") as HTMLButtonElement,
+    document.getElementById("answer-c") as HTMLButtonElement,
+    document.getElementById("answer-d") as HTMLButtonElement,
+  ].filter(Boolean);
+}
 
 function displayQuestion() {
   const question = state.questions[state.currentQuestionIndex];
-  const answers = [...question.incorrect_answers, question.correct_answer].sort(
-    () => Math.random() - 0.5
-  );
+  const answers = getAnswers(question);
+  const answerButtons = getAnswerButtons();
+
   const questionEl = document.getElementById("question") as HTMLDivElement;
   if (questionEl) {
     console.log("Displaying question:", question.question);
@@ -168,25 +195,18 @@ function displayQuestion() {
   }
 
   // Reset all answer buttons before updating
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
-
   answerButtons.forEach((btn) => {
     if (btn) {
       btn.className =
         "bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center";
-      btn.disabled = false; // Re-enable buttons
-      btn.classList.remove("hidden"); // Ensure all buttons are visible
-      btn.onclick = null; // Clear previous event listeners
+      btn.disabled = false;
+      btn.classList.remove("hidden");
+      btn.onclick = null;
     }
   });
 
   console.log("Updating answers:", answers);
-  updateAnswers(answers); // This will set new text and onclick handlers
+  updateQuestionUI(question, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
   startTimer(() => endGame(false, "Time’s up!"));
@@ -220,12 +240,7 @@ export async function handleAnswer(
     currentQuestion.correct_answer
   );
 
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
+  const answerButtons = getAnswerButtons();
 
   answerButtons.forEach((btn) => {
     if (!btn) return;
@@ -281,32 +296,44 @@ export async function handleAnswer(
     endGame(false, "Incorrect answer");
   }
 }
-// ... (other functions unchanged)
 
-function endGame(walkAway: boolean, message: string) {
+export async function endGame(walkAway: boolean, message: string) {
   stopTimer();
 
-  console.log("endGame called - walkAway:", walkAway, "message:", message);
-  console.log("Current question index:", state.currentQuestionIndex);
   const safeHavensBelow = SAFE_HAVENS.filter(
     (h) => h <= state.currentQuestionIndex
   );
-  console.log("Safe havens below or at current index:", safeHavensBelow);
+
   const lastSafeHaven = safeHavensBelow.pop() || 0;
-  console.log("Last safe haven:", lastSafeHaven);
 
   const prize = walkAway
     ? PRIZE_LADDER[state.currentQuestionIndex - 1] || 0
     : PRIZE_LADDER[lastSafeHaven - 1] || 0;
   console.log("Calculated prize:", prize);
 
+  // Send notification if notifications are enabled
+  const context = await sdk.context;
+  const notificationDetails = context.client.notificationDetails;
+  if (notificationDetails && prize > 0) {
+    const notificationPayload = {
+      notificationId: `wwtbam-${Date.now()}`,
+      title: "WWTBAM Update",
+      body: `You won $${prize.toLocaleString()}!`,
+      targetUrl: "https://yourdomain.com/",
+      tokens: [notificationDetails.token],
+    };
+    try {
+      await axios.post(notificationDetails.url, notificationPayload, {
+        headers: { "Content-Type": "application/json" },
+      });
+      console.log("Notification sent successfully");
+    } catch (error) {
+      console.error("Failed to send notification:", error);
+    }
+  }
+
   // Reset answer buttons
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
+  const answerButtons = getAnswerButtons();
   answerButtons.forEach((btn) => {
     if (btn) {
       btn.className =
@@ -330,7 +357,7 @@ function endGame(walkAway: boolean, message: string) {
   // Show prize announcement modal
   const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
   if (prizeModal) {
-    playSound(prize > 0 ? "win" : "lose"); // Add win.mp3 and lose.mp3 to sounds/
+    playSound(prize > 0 ? "win" : "lose");
     const isWin = message === "Congratulations, you’ve won!";
     prizeModal.innerHTML = `
       <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
@@ -340,8 +367,8 @@ function endGame(walkAway: boolean, message: string) {
           ${isWin ? "Congratulations!" : "Game Over"}
         </h2>
         <p class="text-lg md:text-xl mb-4">
-  You walk away with <span class="font-bold text-yellow-400 animate-bounce">$${prize.toLocaleString()}</span>!
-</p>
+          You walk away with <span class="font-bold text-yellow-400 animate-bounce">$${prize.toLocaleString()}</span>!
+        </p>
         <button id="close-prize" class="px-4 py-2 bg-green-600 rounded-full hover:bg-green-700 transition-colors text-sm md:text-base">OK</button>
       </div>
     `;
@@ -372,7 +399,7 @@ function startTimer(onTimeout: () => void) {
       clearInterval(timer!);
       onTimeout();
     }
-  }, 1000);
+  }, 1000) as unknown as number; // TypeScript fix for Node vs Browser setInterval
 }
 
 function stopTimer() {
@@ -404,8 +431,8 @@ export function useFiftyFifty() {
 
   state.lifelinesUsed.fiftyFifty = true;
   console.log("New answers after 50/50:", newAnswers);
-  updateAnswers(newAnswers); // Update UI with only 2 answers
-  updateLifelinesUI(state.lifelinesUsed); // Disable the button
+  updateAnswers(newAnswers);
+  updateLifelinesUI(state.lifelinesUsed);
   playSound("fifty-fifty");
   saveGame();
 }
@@ -434,7 +461,7 @@ export function usePhoneFriend() {
         <p class="text-lg animate-pulse">Calling ${friendName}...</p>
       </div>
     `;
-    playSound("phone-ringing"); // Assumes you have a ringing sound file
+    playSound("phone-ringing");
 
     // Simulate phone call sequence
     setTimeout(() => {
@@ -443,8 +470,8 @@ export function usePhoneFriend() {
           <p class="text-lg">${friendName}: Hello?</p>
         </div>
       `;
-      playSound("phone-pickup"); // Optional: sound for picking up
-    }, 2000); // 2 seconds of ringing
+      playSound("phone-pickup");
+    }, 2000);
 
     setTimeout(() => {
       modal.innerHTML = `
@@ -458,7 +485,9 @@ export function usePhoneFriend() {
       document.getElementById("close-phone")?.addEventListener("click", () => {
         modal.classList.add("hidden");
       });
-    }, 3500); // 1.5 seconds after "Hello?"
+    }, 3500);
+  } else {
+    console.error("Phone friend modal not found");
   }
 
   state.lifelinesUsed.phoneFriend = true;
@@ -473,13 +502,7 @@ export function useAskAudience() {
   const currentQuestion = state.questions[state.currentQuestionIndex];
 
   // Get current displayed answers from buttons
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
-
+  const answerButtons = getAnswerButtons();
   const answers = answerButtons
     .map((btn) => (btn ? btn.textContent?.substring(3).trim() : ""))
     .filter((answer) => answer !== "");
@@ -487,9 +510,9 @@ export function useAskAudience() {
   // Simulate audience voting
   const votes = answers.map((answer) => {
     if (answer === currentQuestion.correct_answer) {
-      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE; // 60% base + random 0-20%
+      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE;
     }
-    return Math.floor(Math.random() * 20); // 0-20% for incorrect
+    return Math.floor(Math.random() * 20);
   });
   const total = votes.reduce((sum, vote) => sum + vote, 0);
   const percentages = votes.map((vote) => Math.round((vote / total) * 100));
@@ -525,6 +548,8 @@ export function useAskAudience() {
     document.getElementById("close-audience")?.addEventListener("click", () => {
       modal.classList.add("hidden");
     });
+  } else {
+    console.error("Audience modal not found");
   }
 
   state.lifelinesUsed.askAudience = true;
@@ -545,9 +570,9 @@ export function walkAway(confirmed: boolean) {
   } else {
     console.log("Player chose to continue");
     if (state.currentQuestionIndex < state.questions.length) {
-      displayQuestion(); // Continue to next question
+      displayQuestion();
     } else {
-      endGame(true, "Congratulations, you’ve won!"); // Edge case: last question was a safe haven
+      endGame(true, "Congratulations, you’ve won!");
     }
   }
 }

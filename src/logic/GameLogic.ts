@@ -66,6 +66,9 @@ export function startGame(
   const difficultySelection = document.getElementById(
     "difficulty-selection"
   ) as HTMLDivElement;
+  const togglePrizeLadderBtn = document.getElementById(
+    "toggle-prize-ladder"
+  ) as HTMLButtonElement;
 
   if (!gameUi || !difficultySelection) {
     console.error(
@@ -89,6 +92,11 @@ export function startGame(
   console.log("Hiding difficulty selection, showing game UI");
   difficultySelection.classList.add("hidden");
   gameUi.classList.remove("hidden");
+
+  // Show the prize ladder toggle button
+  if (togglePrizeLadderBtn) {
+    togglePrizeLadderBtn.classList.remove("hidden");
+  }
 
   // Ensure all modals are hidden on start
   const walkAwayModal = document.getElementById(
@@ -121,19 +129,35 @@ export function startGame(
     })
     .catch((error) => {
       console.error("Failed to fetch questions:", error);
-      state.questions = [
-        {
-          question: "What is 2 + 2?",
-          correct_answer: "4",
-          incorrect_answers: ["3", "5", "22"],
-          category: "",
-          type: "",
-          difficulty: "",
-        },
-      ];
-      state.currentQuestionIndex = 0;
-      displayQuestion();
-      saveGame();
+      const modal = document.getElementById("modals-container") as HTMLElement;
+      if (modal) {
+        modal.innerHTML = `
+          <div class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+            <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
+              <h2 class="text-xl mb-4 text-red-400">Error</h2>
+              <p class="text-lg mb-4">${error.message}</p>
+              <button id="close-error" class="px-4 py-2 bg-gray-600 rounded-full hover:bg-gray-700">OK</button>
+            </div>
+          </div>
+        `;
+        document
+          .getElementById("close-error")
+          ?.addEventListener("click", () => {
+            modal.innerHTML = "";
+            gameUi?.classList.add("hidden");
+            difficultySelection?.classList.remove("hidden");
+            // Hide lifelines since game UI is hidden
+            const lifelinesContainer = document.getElementById(
+              "lifelines-container"
+            ) as HTMLDivElement;
+            if (lifelinesContainer) {
+              console.log(
+                "Hiding lifelines container after error modal (game not started)"
+              );
+              lifelinesContainer.classList.add("hidden");
+            }
+          });
+      }
     });
 }
 
@@ -246,8 +270,28 @@ function displayQuestion() {
   startTimer(() => endGame(false, "Time’s up!"));
   saveGame();
 
-  const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
-  if (lifelinesEl) lifelinesEl.classList.remove("hidden");
+  // Always show lifelines when displaying a new question
+  const lifelinesContainer = document.getElementById(
+    "lifelines-container"
+  ) as HTMLDivElement;
+  if (lifelinesContainer) {
+    console.log(
+      "Showing lifelines container for question",
+      state.currentQuestionIndex + 1
+    );
+    lifelinesContainer.classList.remove("hidden");
+    // Also ensure the inner lifelines div is shown (if it exists)
+    const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
+    if (lifelinesEl) {
+      console.log(
+        "Ensuring inner lifelines div is visible for question",
+        state.currentQuestionIndex + 1
+      );
+      lifelinesEl.classList.remove("hidden");
+    }
+  } else {
+    console.error("Lifelines container not found");
+  }
 }
 
 // handle answer function
@@ -257,8 +301,15 @@ export async function handleAnswer(
 ) {
   console.log("handleAnswer called with:", selectedAnswer);
   stopTimer();
-  const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
-  if (lifelinesEl) lifelinesEl.classList.add("hidden");
+  const lifelinesContainer = document.getElementById(
+    "lifelines-container"
+  ) as HTMLDivElement;
+  if (lifelinesContainer) {
+    console.log("Hiding lifelines container during answer animation");
+    lifelinesContainer.classList.add("hidden");
+  } else {
+    console.error("Lifelines container not found in handleAnswer");
+  }
 
   selectedBtn.className =
     "bg-yellow-400 text-base md:text-lg py-2 md:py-3 rounded-full flex items-center justify-center animate-pulse";
@@ -360,8 +411,39 @@ export async function endGame(walkAway: boolean, message: string) {
     : PRIZE_LADDER[lastSafeHaven - 1] || 0;
   console.log("Calculated prize:", prize);
 
+  // Mock context for local development
+  const isLocalDev =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const isFarcasterEnvironment = !!window.parent && !isLocalDev;
+  const mockContext = {
+    user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
+    client: {
+      clientFid: 0,
+      added: false,
+      safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
+      notificationDetails: null,
+    },
+  };
+
   // Send notification if notifications are enabled
-  const context = await sdk.context;
+  let context;
+  try {
+    context = await sdk.context;
+    if (!context && isFarcasterEnvironment) {
+      console.warn("sdk.context is undefined even in Farcaster environment");
+      context = mockContext;
+    } else if (!context) {
+      console.log(
+        "Not in Farcaster environment, using mock context in endGame"
+      );
+      context = mockContext;
+    }
+  } catch (error) {
+    console.error("Error resolving sdk.context in endGame:", error);
+    context = mockContext;
+  }
+
   const notificationDetails = context.client.notificationDetails;
   if (notificationDetails && prize > 0) {
     const notificationPayload = {
@@ -398,10 +480,14 @@ export async function endGame(walkAway: boolean, message: string) {
   const difficultySelection = document.getElementById(
     "difficulty-selection"
   ) as HTMLDivElement;
+  const togglePrizeLadderBtn = document.getElementById(
+    "toggle-prize-ladder"
+  ) as HTMLButtonElement;
   if (gameUi) gameUi.classList.add("hidden");
   else console.error("Game UI not found in endGame");
   if (difficultySelection) difficultySelection.classList.remove("hidden");
   else console.error("Difficulty selection not found in endGame");
+  if (togglePrizeLadderBtn) togglePrizeLadderBtn.classList.add("hidden");
 
   // Show prize announcement modal
   const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
@@ -424,6 +510,16 @@ export async function endGame(walkAway: boolean, message: string) {
     prizeModal.classList.remove("hidden");
     document.getElementById("close-prize")?.addEventListener("click", () => {
       prizeModal.classList.add("hidden");
+      // Hide lifelines since game UI is hidden
+      const lifelinesContainer = document.getElementById(
+        "lifelines-container"
+      ) as HTMLDivElement;
+      if (lifelinesContainer) {
+        console.log(
+          "Hiding lifelines container after prize modal (game ended)"
+        );
+        lifelinesContainer.classList.add("hidden");
+      }
     });
   } else {
     console.error("Prize modal not found");
@@ -533,6 +629,25 @@ export function usePhoneFriend() {
       `;
       document.getElementById("close-phone")?.addEventListener("click", () => {
         modal.classList.add("hidden");
+        // Show lifelines after closing the modal
+        const lifelinesContainer = document.getElementById(
+          "lifelines-container"
+        ) as HTMLDivElement;
+        if (lifelinesContainer && state.gameStarted) {
+          console.log(
+            "Showing lifelines container after closing phone friend modal"
+          );
+          lifelinesContainer.classList.remove("hidden");
+          const lifelinesEl = document.getElementById(
+            "lifelines"
+          ) as HTMLDivElement;
+          if (lifelinesEl) {
+            console.log(
+              "Ensuring inner lifelines div is visible after phone friend modal"
+            );
+            lifelinesEl.classList.remove("hidden");
+          }
+        }
       });
     }, 3500);
   } else {
@@ -596,6 +711,23 @@ export function useAskAudience() {
     `;
     document.getElementById("close-audience")?.addEventListener("click", () => {
       modal.classList.add("hidden");
+      // Show lifelines after closing the modal
+      const lifelinesContainer = document.getElementById(
+        "lifelines-container"
+      ) as HTMLDivElement;
+      if (lifelinesContainer && state.gameStarted) {
+        console.log("Showing lifelines container after closing audience modal");
+        lifelinesContainer.classList.remove("hidden");
+        const lifelinesEl = document.getElementById(
+          "lifelines"
+        ) as HTMLDivElement;
+        if (lifelinesEl) {
+          console.log(
+            "Ensuring inner lifelines div is visible after audience modal"
+          );
+          lifelinesEl.classList.remove("hidden");
+        }
+      }
     });
   } else {
     console.error("Audience modal not found");
@@ -622,6 +754,25 @@ export function walkAway(confirmed: boolean) {
       displayQuestion();
     } else {
       endGame(true, "Congratulations, you’ve won!");
+    }
+    // Show lifelines after closing the walk-away modal (if continuing)
+    const lifelinesContainer = document.getElementById(
+      "lifelines-container"
+    ) as HTMLDivElement;
+    if (lifelinesContainer && state.gameStarted) {
+      console.log(
+        "Showing lifelines container after closing walk-away modal (continuing)"
+      );
+      lifelinesContainer.classList.remove("hidden");
+      const lifelinesEl = document.getElementById(
+        "lifelines"
+      ) as HTMLDivElement;
+      if (lifelinesEl) {
+        console.log(
+          "Ensuring inner lifelines div is visible after walk-away modal"
+        );
+        lifelinesEl.classList.remove("hidden");
+      }
     }
   }
 }

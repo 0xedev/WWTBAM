@@ -1,4 +1,71 @@
-/* src/style.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
+
+@layer base {
+  h1 {
+    font-family: "Playfair Display", serif;
+  }
+  body {
+    font-family: "Montserrat", sans-serif;
+  }
+}
+
+@layer utilities {
+  /* Fade-in animation */
+  .animate-fade-in {
+    animation: fadeIn 1s ease-in-out forwards;
+  }
+
+  .animate-fade-in-delay-1 {
+    animation: fadeIn 1s ease-in-out 0.3s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-2 {
+    animation: fadeIn 1s ease-in-out 0.6s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-3 {
+    animation: fadeIn 1s ease-in-out 0.9s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-4 {
+    animation: fadeIn 1s ease-in-out 1.2s forwards;
+    opacity: 0;
+  }
+
+  .animate-fade-in-delay-5 {
+    animation: fadeIn 1s ease-in-out 1.5s forwards;
+    opacity: 0;
+  }
+
+  .animate-pulse-slow {
+    animation: pulseSlow 10s ease-in-out infinite;
+  }
+}
+
+@keyframes fadeIn {
+  0% {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes pulseSlow {
+  0% {
+    opacity: 0.3;
+  }
+  50% {
+    opacity: 0.6;
+  }
+  100% {
+    opacity: 0.3;
+  }
+}

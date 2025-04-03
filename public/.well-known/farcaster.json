@@ -1,0 +1,18 @@
+{
+  "accountAssociation": {
+    "header": "eyJmaWQiOjIzOTM5NiwidHlwZSI6ImN1c3RvZHkiLCJrZXkiOiIweDRENEU1MjIzODRkNkYxMDkwYkZENEM0NTI3YTdkNTJERmQyMGJDYTMifQ",
+    "payload": "eyJkb21haW4iOiJ3d3RiYW0tcmhvLnZlcmNlbC5hcHAifQ",
+    "signature": "MHhkYTJjOGE0YmY3M2E0MjkzN2UyYWM0M2U1OTA5ZmM3Y2UyZTA1MDJkN2Y1NDFkYzE4ODE2MDIwMzAyYjg2MjA3NzFhNWIyNGU2NjlmZjc0MDUxNDcyOGU1MGExNzZjMjU2NTVhODk0YzdkNTViMzdkZmU4ZjdkZjEyZWYzOWY3ZDFi"
+  },
+  "frame": {
+    "version": "1",
+    "name": "Example Frame",
+    "iconUrl": "https://wwtbam-rho.vercel.app/icon.png",
+    "homeUrl": "https://wwtbam-rho.vercel.app",
+    "imageUrl": "https://wwtbam-rho.vercel.app/image.png",
+    "buttonTitle": "Check this out",
+    "splashImageUrl": "https://wwtbam-rho.vercel.app/splash.png",
+    "splashBackgroundColor": "#eeccff",
+    "webhookUrl": "https://wwtbam-rho.vercel.app/api/webhook"
+  }
+}

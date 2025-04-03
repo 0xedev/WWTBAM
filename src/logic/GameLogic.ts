@@ -1,7 +1,8 @@
 import { GameState, TriviaQuestion } from "../utils/Types";
 import { fetchQuestions } from "./Api";
-import { updatePrizeLadder } from "../components/PrizeLadder"; // Correct import
-import { updateGameUI } from "../uiUpdates"; // Correct import
+import { updatePrizeLadder } from "../components/PrizeLadder";
+import { updateQuestionUI, updateLifelinesUI } from "../uiUpdates";
+import { updateAnswers } from "../components/GameUI";
 import {
   PRIZE_LADDER,
   SAFE_HAVENS,
@@ -12,7 +13,6 @@ import {
 import { playSound } from "../utils/Sound";
 import { sdk } from "@farcaster/frame-sdk";
 import axios from "axios";
-import { updateLifelinesUI } from "../uiUpdates";
 
 let timer: number | null = null;
 
@@ -154,16 +154,10 @@ export function resumeGame(savedGame: GameState): boolean {
   gameUi.classList.remove("hidden");
 
   // Update UI based on restored state
-  const gameUIContainer = document.getElementById(
-    "game-ui-container"
-  ) as HTMLElement;
   const currentQuestion = state.questions[state.currentQuestionIndex];
-  updateGameUI(
-    currentQuestion,
-    getAnswers(currentQuestion),
-    getAnswerButtons(),
-    handleAnswer
-  );
+  const answers = getAnswers(currentQuestion);
+  const answerButtons = getAnswerButtons();
+  updateQuestionUI(currentQuestion, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
 
@@ -212,7 +206,7 @@ function displayQuestion() {
   });
 
   console.log("Updating answers:", answers);
-  updateGameUI(question, answers, answerButtons, handleAnswer);
+  updateQuestionUI(question, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
   startTimer(() => endGame(false, "Time’s up!"));
@@ -221,9 +215,6 @@ function displayQuestion() {
   const lifelinesEl = document.getElementById("lifelines") as HTMLDivElement;
   if (lifelinesEl) lifelinesEl.classList.remove("hidden");
 }
-
-// The rest of GameLogic.ts remains unchanged
-// ... (handleAnswer, endGame, startTimer, stopTimer, useFiftyFifty, usePhoneFriend, useAskAudience, walkAway)
 
 // handle answer function
 export async function handleAnswer(
@@ -249,12 +240,7 @@ export async function handleAnswer(
     currentQuestion.correct_answer
   );
 
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
+  const answerButtons = getAnswerButtons();
 
   answerButtons.forEach((btn) => {
     if (!btn) return;
@@ -310,7 +296,6 @@ export async function handleAnswer(
     endGame(false, "Incorrect answer");
   }
 }
-// ... (other functions unchanged)
 
 export async function endGame(walkAway: boolean, message: string) {
   stopTimer();
@@ -327,7 +312,7 @@ export async function endGame(walkAway: boolean, message: string) {
   console.log("Calculated prize:", prize);
 
   // Send notification if notifications are enabled
-  const context = await sdk.context; // Await the promise
+  const context = await sdk.context;
   const notificationDetails = context.client.notificationDetails;
   if (notificationDetails && prize > 0) {
     const notificationPayload = {
@@ -346,13 +331,9 @@ export async function endGame(walkAway: boolean, message: string) {
       console.error("Failed to send notification:", error);
     }
   }
+
   // Reset answer buttons
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
+  const answerButtons = getAnswerButtons();
   answerButtons.forEach((btn) => {
     if (btn) {
       btn.className =
@@ -376,7 +357,7 @@ export async function endGame(walkAway: boolean, message: string) {
   // Show prize announcement modal
   const prizeModal = document.getElementById("prize-modal") as HTMLDivElement;
   if (prizeModal) {
-    playSound(prize > 0 ? "win" : "lose"); // Add win.mp3 and lose.mp3 to sounds/
+    playSound(prize > 0 ? "win" : "lose");
     const isWin = message === "Congratulations, you’ve won!";
     prizeModal.innerHTML = `
       <div class="bg-gray-800 p-6 rounded-lg w-11/12 max-w-md">
@@ -386,8 +367,8 @@ export async function endGame(walkAway: boolean, message: string) {
           ${isWin ? "Congratulations!" : "Game Over"}
         </h2>
         <p class="text-lg md:text-xl mb-4">
-  You walk away with <span class="font-bold text-yellow-400 animate-bounce">$${prize.toLocaleString()}</span>!
-</p>
+          You walk away with <span class="font-bold text-yellow-400 animate-bounce">$${prize.toLocaleString()}</span>!
+        </p>
         <button id="close-prize" class="px-4 py-2 bg-green-600 rounded-full hover:bg-green-700 transition-colors text-sm md:text-base">OK</button>
       </div>
     `;
@@ -418,7 +399,7 @@ function startTimer(onTimeout: () => void) {
       clearInterval(timer!);
       onTimeout();
     }
-  }, 1000);
+  }, 1000) as unknown as number; // TypeScript fix for Node vs Browser setInterval
 }
 
 function stopTimer() {
@@ -450,8 +431,8 @@ export function useFiftyFifty() {
 
   state.lifelinesUsed.fiftyFifty = true;
   console.log("New answers after 50/50:", newAnswers);
-  updateAnswers(newAnswers); // Update UI with only 2 answers
-  updateLifelinesUI(state.lifelinesUsed); // Disable the button
+  updateAnswers(newAnswers);
+  updateLifelinesUI(state.lifelinesUsed);
   playSound("fifty-fifty");
   saveGame();
 }
@@ -480,7 +461,7 @@ export function usePhoneFriend() {
         <p class="text-lg animate-pulse">Calling ${friendName}...</p>
       </div>
     `;
-    playSound("phone-ringing"); // Assumes you have a ringing sound file
+    playSound("phone-ringing");
 
     // Simulate phone call sequence
     setTimeout(() => {
@@ -489,8 +470,8 @@ export function usePhoneFriend() {
           <p class="text-lg">${friendName}: Hello?</p>
         </div>
       `;
-      playSound("phone-pickup"); // Optional: sound for picking up
-    }, 2000); // 2 seconds of ringing
+      playSound("phone-pickup");
+    }, 2000);
 
     setTimeout(() => {
       modal.innerHTML = `
@@ -504,7 +485,9 @@ export function usePhoneFriend() {
       document.getElementById("close-phone")?.addEventListener("click", () => {
         modal.classList.add("hidden");
       });
-    }, 3500); // 1.5 seconds after "Hello?"
+    }, 3500);
+  } else {
+    console.error("Phone friend modal not found");
   }
 
   state.lifelinesUsed.phoneFriend = true;
@@ -519,13 +502,7 @@ export function useAskAudience() {
   const currentQuestion = state.questions[state.currentQuestionIndex];
 
   // Get current displayed answers from buttons
-  const answerButtons = [
-    document.getElementById("answer-a") as HTMLButtonElement,
-    document.getElementById("answer-b") as HTMLButtonElement,
-    document.getElementById("answer-c") as HTMLButtonElement,
-    document.getElementById("answer-d") as HTMLButtonElement,
-  ].filter(Boolean);
-
+  const answerButtons = getAnswerButtons();
   const answers = answerButtons
     .map((btn) => (btn ? btn.textContent?.substring(3).trim() : ""))
     .filter((answer) => answer !== "");
@@ -533,9 +510,9 @@ export function useAskAudience() {
   // Simulate audience voting
   const votes = answers.map((answer) => {
     if (answer === currentQuestion.correct_answer) {
-      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE; // 60% base + random 0-20%
+      return Math.floor(Math.random() * 20) + AUDIENCE_VOTE_CORRECT_PERCENTAGE;
     }
-    return Math.floor(Math.random() * 20); // 0-20% for incorrect
+    return Math.floor(Math.random() * 20);
   });
   const total = votes.reduce((sum, vote) => sum + vote, 0);
   const percentages = votes.map((vote) => Math.round((vote / total) * 100));
@@ -571,6 +548,8 @@ export function useAskAudience() {
     document.getElementById("close-audience")?.addEventListener("click", () => {
       modal.classList.add("hidden");
     });
+  } else {
+    console.error("Audience modal not found");
   }
 
   state.lifelinesUsed.askAudience = true;
@@ -591,9 +570,9 @@ export function walkAway(confirmed: boolean) {
   } else {
     console.log("Player chose to continue");
     if (state.currentQuestionIndex < state.questions.length) {
-      displayQuestion(); // Continue to next question
+      displayQuestion();
     } else {
-      endGame(true, "Congratulations, you’ve won!"); // Edge case: last question was a safe haven
+      endGame(true, "Congratulations, you’ve won!");
     }
   }
 }

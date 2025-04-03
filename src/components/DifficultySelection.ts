@@ -1,5 +1,5 @@
 import { sdk } from "@farcaster/frame-sdk";
-import { startGame, resumeGame, loadGame } from "../logic/GameLogic"; // Removed unused imports
+import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
 
 // Mock context for local development
@@ -64,7 +64,7 @@ export async function renderDifficultySelection(container: HTMLElement) {
   const categorySelect = document.getElementById(
     "category-select"
   ) as HTMLSelectElement;
-  const easyBtn = document.get as HTMLButtonElement;
+  const easyBtn = document.getElementById("easy-btn") as HTMLButtonElement; // Fixed typo: 'get' -> 'getElementById'
   const mediumBtn = document.getElementById("medium-btn") as HTMLButtonElement;
   const hardBtn = document.getElementById("hard-btn") as HTMLButtonElement;
   const resumeBtn = document.getElementById("resume-btn") as HTMLButtonElement;

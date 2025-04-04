@@ -215,12 +215,38 @@ export function resumeGame(savedGame: GameState): boolean {
   const currentQuestion = state.questions[state.currentQuestionIndex];
   const answers = getAnswers(currentQuestion);
   const answerButtons = getAnswerButtons();
-  updateQuestionUI(currentQuestion, answers, answerButtons, handleAnswer);
+  const normalizedQuestion = normalizeQuestionText(currentQuestion.question); // Normalize the question text
+  console.log("Resuming game with normalized question:", normalizedQuestion);
+  updateQuestionUI(normalizedQuestion, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
 
   startTimer(() => endGame(false, "Time’s up!"));
   return true;
+}
+
+// Helper function to normalize question text
+function normalizeQuestionText(text: string): string {
+  // Decode HTML entities (e.g., &quot; to ", &nbsp; to space)
+  const textArea = document.createElement("textarea");
+  textArea.innerHTML = text;
+  let normalized = textArea.value;
+
+  // Replace smart quotes with straight quotes
+  normalized = normalized
+    .replace(/[\u201C\u201D]/g, '"')
+    .replace(/[\u2018\u2019]/g, "'");
+
+  // Remove extra spaces around quotation marks
+  normalized = normalized.replace(/"\s+/g, '"').replace(/\s+"/g, '"');
+
+  // Replace multiple spaces with a single space
+  normalized = normalized.replace(/\s+/g, " ");
+
+  // Trim any leading/trailing spaces
+  normalized = normalized.trim();
+
+  return normalized;
 }
 
 // Helper functions to get answers and buttons (used in displayQuestion and resumeGame)
@@ -243,11 +269,15 @@ function displayQuestion() {
   const question = state.questions[state.currentQuestionIndex];
   const answers = getAnswers(question);
   const answerButtons = getAnswerButtons();
-
+  const normalizedQuestion = normalizeQuestionText(question.question);
   const questionEl = document.getElementById("question") as HTMLDivElement;
   if (questionEl) {
-    console.log("Displaying question:", question.question);
-    questionEl.textContent = question.question;
+    // Log the raw question text
+    console.log("Raw question text:", question.question);
+    // Normalize the question text
+
+    console.log("Normalized question text:", normalizedQuestion);
+    questionEl.textContent = normalizedQuestion;
   } else {
     console.error("Question element not found");
   }
@@ -264,7 +294,8 @@ function displayQuestion() {
   });
 
   console.log("Updating answers:", answers);
-  updateQuestionUI(question, answers, answerButtons, handleAnswer);
+  // Pass the normalized question text to updateQuestionUI
+  updateQuestionUI(normalizedQuestion, answers, answerButtons, handleAnswer);
   updatePrizeLadder(state.currentQuestionIndex);
   updateLifelinesUI(state.lifelinesUsed);
   startTimer(() => endGame(false, "Time’s up!"));
@@ -293,7 +324,6 @@ function displayQuestion() {
     console.error("Lifelines container not found");
   }
 }
-
 // handle answer function
 export async function handleAnswer(
   selectedAnswer: string,

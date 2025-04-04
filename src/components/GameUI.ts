@@ -2,11 +2,11 @@ import { handleAnswer } from "../logic/GameLogic";
 
 export function renderGameUI(container: HTMLElement) {
   container.innerHTML = `
-    <div id="game-ui" class="flex flex-col md:flex-row">
+    <div id="game-ui" class="flex flex-col md:flex-row py-6">
       <div class="flex-1 flex flex-col items-center">
-        <div id="timer" class="text-base md:text-lg mb-2 hidden">Time Left: 30s</div>
-        <div id="question" class="bg-gray-900 bg-opacity-80 text-lg md:text-2xl p-4 md:p-6 rounded-lg w-full text-center mb-4 md:mb-8 border-2 border-yellow-400">Question goes here</div>
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-3 md:gap-4 w-full">
+        <div id="timer" class="text-base md:text-lg mb-4 hidden">Time Left: 30s</div>
+        <div id="question" class="bg-gray-900 bg-opacity-80 text-lg md:text-2xl p-6 rounded-lg w-full text-center mb-6 md:mb-10 border-2 border-yellow-400">Question goes here</div>
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 md:gap-6 w-full">
           <button id="answer-a" class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center"><span class="mr-2 font-bold">A:</span> Option A</button>
           <button id="answer-b" class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center"><span class="mr-2 font-bold">B:</span> Option B</button>
           <button id="answer-c" class="bg-orange-600 text-base md:text-lg py-2 md:py-3 rounded-full hover:bg-orange-700 transition-colors flex items-center justify-center"><span class="mr-2 font-bold">C:</span> Option C</button>

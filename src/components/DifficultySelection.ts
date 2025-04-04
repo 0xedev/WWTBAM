@@ -1,4 +1,3 @@
-// src/components/DifficultySelection.ts
 import { sdk } from "@farcaster/frame-sdk";
 import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
@@ -50,95 +49,101 @@ export async function renderDifficultySelection(container: HTMLElement) {
   const savedGame = loadGame();
 
   container.innerHTML = `
-    <div id="difficulty-selection" class="relative flex flex-col items-center justify-center h-full bg-gradient-to-b from-gray-900 via-blue-950 to-black overflow-hidden">
-      <!-- Spotlight Background Effect -->
-      <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.3)_0%,transparent_60%)] animate-spotlight"></div>
-      <!-- Subtle Grid Overlay -->
-      <div class="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50"></div>
+    <div id="difficulty-selection" class="relative flex flex-col h-full bg-gradient-to-b from-gray-900 via-blue-950 to-black overflow-hidden py-8 md:py-12">
+  <!-- Background effects -->
+  <div class="absolute inset-0 bg-[radial-gradient(circle_at_center,rgba(255,215,0,0.3)_0%,transparent_60%)] animate-spotlight"></div>
+  <div class="absolute inset-0 bg-[linear-gradient(to_right,rgba(255,255,255,0.05)_1px,transparent_1px),linear-gradient(to_bottom,rgba(255,255,255,0.05)_1px,transparent_1px)] bg-[size:40px_40px] opacity-50"></div>
 
-      <!-- Sound Controls -->
-      <div id="sound-controls-container" class="absolute top-4 right-4"></div>
-
-      <!-- Title with Glow Effect -->
-      <h1 class="text-4xl md:text-6xl font-extrabold mb-4 text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 tracking-wide animate-glow shadow-2xl">
-        Who Wants to Be a Millionaire
-      </h1>
-
-      <!-- Welcome Message -->
-      <p class="text-lg md:text-xl mb-2 text-gray-200 font-light animate-fade-in-delay-1">
-        ${welcomeMessage}
+  <!-- Sound controls at top right -->
+  <div id="sound-controls-container" class="absolute top-4 right-4"></div>
+  
+  <!-- Header section -->
+  <div class="px-4 mb-10 mt-6">
+    <h1 class="text-4xl md:text-5xl font-extrabold text-center text-transparent bg-clip-text bg-gradient-to-r from-yellow-300 via-yellow-500 to-yellow-300 tracking-wide animate-glow shadow-2xl">
+      Who Wants to Be a Millionaire
+    </h1>
+  </div>
+  
+  <!-- Main content with more generous spacing -->
+  <div class="flex-1 flex flex-col px-6 space-y-24">
+    <div class="text-center space-y-8">
+      <p class="text-lg md:text-xl text-gray-200 font-light animate-fade-in-delay-1">
+        Welcome, LocalTester!
       </p>
-
-      <!-- Prompt -->
-      <p class="text-md md:text-lg mb-6 text-gray-300 font-medium animate-fade-in-delay-2">
+      <p class="text-md md:text-lg text-gray-300 font-medium animate-fade-in-delay-2">
         Select Category and Difficulty
       </p>
+    </div>
+    
+    <!-- Category selection -->
+    <div class="w-full animate-fade-in-delay-3">
+      <select id="category-select" class="w-full px-4 py-3 bg-gray-800/80 backdrop-blur-sm text-gray-200 rounded-lg border-2 border-yellow-500/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 shadow-lg hover:bg-gray-700/80">
+        <option value="">Any Category</option>
+      </select>
+    </div>
+    
+    <!-- Difficulty buttons with more spacing -->
+    <!-- Difficulty buttons with more spacing -->
+<div class="grid grid-cols-3 gap-4 animate-fade-in-delay-4 mb-8">
+  <button id="easy-btn" class="relative px-4 py-3 bg-gradient-to-r from-green-500 to-green-700 text-white font-semibold rounded-full shadow-lg hover:from-green-600 hover:to-green-800 hover:scale-105 transition-all duration-300 overflow-hidden">
+    <span class="relative z-10">Easy</span>
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
+  </button>
+  <button id="medium-btn" class="relative px-4 py-3 bg-gradient-to-r from-yellow-500 to-yellow-700 text-white font-semibold rounded-full shadow-lg hover:from-yellow-600 hover:to-yellow-800 hover:scale-105 transition-all duration-300 overflow-hidden">
+    <span class="relative z-10">Medium</span>
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
+  </button>
+  <button id="hard-btn" class="relative px-4 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold rounded-full shadow-lg hover:from-red-600 hover:to-red-800 hover:scale-105 transition-all duration-300 overflow-hidden">
+    <span class="relative z-10">Hard</span>
+    <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
+  </button>
+</div>
 
-      <!-- Category Dropdown -->
-      <div class="flex flex-col items-center mb-6 w-full max-w-xs animate-fade-in-delay-3">
-        <select id="category-select" class="w-full px-4 py-3 bg-gray-800/80 backdrop-blur-sm text-gray-200 rounded-lg border-2 border-yellow-500/50 focus:outline-none focus:ring-2 focus:ring-yellow-400 transition-all duration-300 shadow-lg hover:bg-gray-700/80">
-          <option value="">Any Category</option>
-        </select>
-      </div>
-
-      <!-- Difficulty Buttons -->
-      <div class="grid grid-cols-3 gap-4 mb-6 animate-fade-in-delay-4">
-        <button id="easy-btn" class="relative px-6 py-3 bg-gradient-to-r from-green-500 to-green-700 text-white font-semibold rounded-full shadow-lg hover:from-green-600 hover:to-green-800 hover:scale-105 transition-all duration-300 overflow-hidden">
-          <span class="relative z-10">Easy</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
-        </button>
-        <button id="medium-btn" class="relative px-6 py-3 bg-gradient-to-r from-yellow-500 to-yellow-700 text-white font-semibold rounded-full shadow-lg hover:from-yellow-600 hover:to-yellow-800 hover:scale-105 transition-all duration-300 overflow-hidden">
-          <span class="relative z-10">Medium</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
-        </button>
-        <button id="hard-btn" class="relative px-6 py-3 bg-gradient-to-r from-red-500 to-red-700 text-white font-semibold rounded-full shadow-lg hover:from-red-600 hover:to-red-800 hover:scale-105 transition-all duration-300 overflow-hidden">
-          <span class="relative z-10">Hard</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
-        </button>
-      </div>
-
+  </div>
+  
       <!-- Action Buttons -->
       <div class="relative z-10 flex flex-col sm:flex-row gap-4">
         ${
           savedGame
             ? `<button id="resume-btn" class="relative px-6 py-3 bg-gradient-to-r from-purple-500 to-purple-600 text-white font-medium rounded-full shadow-lg shadow-purple-500/20 hover:shadow-purple-500/40 hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden">
-                <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
-                  <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
-                </svg>
-                <span class="relative z-10">Resume Game</span>
-                <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.752 11.168l-3.197-2.132A1 1 0 0010 9.87v4.263a1 1 0 001.555.832l3.197-2.132a1 1 0 000-1.664z" />
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+        </svg>
+        <span class="relative z-10">Resume Game</span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
               </button>`
             : ""
         }
-        <button id="show-prize-ladder-btn" class="relative px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-medium rounded-full shadow-lg hover:shadow-gray-600/40 hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden">
-          <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
-          </svg>
-          <span class="relative z-10">Prize Ladder</span>
-          <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
-        </button>
-      </div>
+      <button id="show-prize-ladder-btn" class="relative mt-10 px-6 py-3 bg-gradient-to-r from-gray-500 to-gray-600 text-white font-medium rounded-full shadow-lg hover:shadow-gray-600/40 hover:scale-105 transition-all duration-300 flex items-center justify-center overflow-hidden">
+        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 7h8m0 0v8m0-8l-8 8-4-4-6 6" />
+        </svg>
+        <span class="relative z-10">Prize Ladder</span>
+        <div class="absolute inset-0 bg-gradient-to-r from-transparent via-white/20 to-transparent -translate-x-full animate-shine"></div>
+      </button>
+    </div>
+  </div>
 
       <!-- Prize Ladder Modal -->
-      <div id="prize-modal" class="fixed inset-0 z-50 flex items-center justify-center bg-black/80 backdrop-blur-sm hidden transition-opacity duration-300">
+  <div id="prize-modal" class="fixed inset-0 z-50 flex items-center justify-center  bg-black/80 backdrop-blur-sm hidden transition-opacity duration-300">
         <div class="bg-gradient-to-b from-gray-900 to-gray-800 p-6 rounded-xl border border-yellow-500/30 w-11/12 max-w-md shadow-2xl">
           <div class="flex justify-between items-center mb-4">
-            <h2 class="text-2xl font-bold text-yellow-400">Prize Ladder</h2>
-            <button id="close-prize-ladder" class="text-gray-400 hover:text-white transition-colors">
-              <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
-              </svg>
-            </button>
-          </div>
-          <div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">
-            <ul class="space-y-2">
+        <h2 class="text-2xl font-bold text-yellow-400">Prize Ladder</h2>
+        <button id="close-prize-ladder" class="text-gray-400 hover:text-white transition-colors">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+          </svg>
+        </button>
+      </div>
+      <div class="max-h-96 overflow-y-auto pr-2 custom-scrollbar">
+            <ul class="space-y-8">
               ${PRIZE_LADDER.map((prize, index) => {
                 const isSafe = SAFE_HAVENS.includes(index + 1);
                 const isMillionaire = index === PRIZE_LADDER.length - 1;
 
                 return `
-                <li class="flex items-center justify-between py-2 px-3 rounded ${
+                <li class="flex items-center justify-between pt-1 px-3 rounded ${
                   isMillionaire
                     ? "bg-gradient-to-r from-yellow-500/30 to-yellow-700/30 border border-yellow-500/50"
                     : isSafe
@@ -162,17 +167,17 @@ export async function renderDifficultySelection(container: HTMLElement) {
                 </li>
                 `;
               }).join("")}
-            </ul>
-          </div>
-          <div class="mt-6 flex justify-center">
-            <div class="text-center text-sm text-gray-400 mb-2">
-              <span class="inline-block w-3 h-3 bg-green-500/40 border border-green-500 rounded-sm mr-1"></span> Safe Havens
-            </div>
-          </div>
+        </ul>
+      </div>
+      <div class="mt-6 flex justify-center">
+        <div class="text-center text-sm text-gray-400 mb-2">
+          <span class="inline-block w-3 h-3 bg-green-500/40 border border-green-500 rounded-sm mr-1"></span> Safe Havens
         </div>
       </div>
     </div>
-  `;
+  </div>
+</div>  
+    `;
 
   const styleElement = document.createElement("style");
   styleElement.textContent = `

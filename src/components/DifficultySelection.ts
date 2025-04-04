@@ -23,7 +23,7 @@ export async function renderDifficultySelection(container: HTMLElement) {
   if (isRendered) return;
   isRendered = true;
 
-  // Get context with fallback for local dev
+  // Get context with fallback for local environment
   let context;
   try {
     context = await sdk.context;

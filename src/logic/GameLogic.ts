@@ -623,7 +623,15 @@ export function usePhoneFriend() {
     : currentQuestion.incorrect_answers[Math.floor(Math.random() * 3)];
 
   // Placeholder friend names
-  const friends = ["Alex", "Sam", "Jordan", "Taylor", "Casey"];
+  const friends = [
+    "dwr",
+    "oxdev",
+    "elkai",
+    "linda",
+    "hamamallah",
+    "Jared",
+    "V",
+  ];
   const friendName = friends[Math.floor(Math.random() * friends.length)];
 
   const modal = document.getElementById("phone-friend-modal") as HTMLDivElement;

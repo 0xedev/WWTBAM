@@ -3,25 +3,25 @@ import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
 import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/Constants";
 
+// Mock context for local development
+const isLocalDev =
+  window.location.hostname === "localhost" ||
+  window.location.hostname === "127.0.0.1";
+const isFarcasterEnvironment = !!window.parent && !isLocalDev;
+const mockContext = {
+  user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
+  client: {
+    clientFid: 0,
+    added: false,
+    safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
+  },
+};
+
 let isRendered = false;
 
 export async function renderDifficultySelection(container: HTMLElement) {
   if (isRendered) return;
   isRendered = true;
-
-  // Mock context for local development
-  const isLocalDev =
-    window.location.hostname === "localhost" ||
-    window.location.hostname === "127.0.0.1";
-  const isFarcasterEnvironment = !!window.parent && !isLocalDev;
-  const mockContext = {
-    user: { fid: 9999, username: "", displayName: "" },
-    client: {
-      clientFid: 0,
-      added: false,
-      safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
-    },
-  };
 
   // Get context with fallback for local dev
   let context;
@@ -41,10 +41,10 @@ export async function renderDifficultySelection(container: HTMLElement) {
     context = mockContext;
   }
 
-  const username = isFarcasterEnvironment
-    ? context.user.username || `FID ${context.user.fid}`
-    : "LocalTester";
-  console.log("Resolved username:", username);
+  const user = context.user;
+  const welcomeMessage = user.username
+    ? `Welcome, ${user.username}!`
+    : `Welcome, FID ${user.fid}!`;
 
   const savedGame = loadGame();
 
@@ -67,8 +67,8 @@ export async function renderDifficultySelection(container: HTMLElement) {
   <!-- Main content with more generous spacing -->
   <div class="flex-1 flex flex-col px-6 space-y-24">
     <div class="text-center space-y-8">
-      <p class="text-lg md:text-xl text-gray-200 font-light animate-fade-in-delay-1">
-        Welcome, LocalTester!
+      <p class="text-lg md:text-xl mb-2 text-gray-200 font-light animate-fade-in-delay-1">
+        ${welcomeMessage}
       </p>
       <p class="text-md md:text-lg text-gray-300 font-medium animate-fade-in-delay-2">
         Select Category and Difficulty

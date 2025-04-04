@@ -624,11 +624,11 @@ export function usePhoneFriend() {
 
   // Placeholder friend names
   const friends = [
-    "dwr",
+    "Dwr",
     "oxdev",
-    "elkai",
-    "linda",
-    "hamamallah",
+    "Elkai",
+    "Linda",
+    "Hamamallah",
     "Jared",
     "V",
   ];

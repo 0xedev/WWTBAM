@@ -11,7 +11,7 @@ import "./styles/styles.css";
 // Mock context for local development
 const isFarcasterEnvironment = !!window.parent;
 const mockContext = {
-  user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
+  user: { fid: 9999, username: "", displayName: "" },
   client: {
     clientFid: 0,
     added: false,

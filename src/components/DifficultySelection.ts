@@ -3,25 +3,25 @@ import { startGame, resumeGame, loadGame } from "../logic/GameLogic";
 import { fetchCategories } from "../logic/Api";
 import { PRIZE_LADDER, SAFE_HAVENS } from "../utils/Constants";
 
-// Mock context for local development
-const isLocalDev =
-  window.location.hostname === "localhost" ||
-  window.location.hostname === "127.0.0.1";
-const isFarcasterEnvironment = !!window.parent && !isLocalDev;
-const mockContext = {
-  user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
-  client: {
-    clientFid: 0,
-    added: false,
-    safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
-  },
-};
-
 let isRendered = false;
 
 export async function renderDifficultySelection(container: HTMLElement) {
   if (isRendered) return;
   isRendered = true;
+
+  // Mock context for local development
+  const isLocalDev =
+    window.location.hostname === "localhost" ||
+    window.location.hostname === "127.0.0.1";
+  const isFarcasterEnvironment = !!window.parent && !isLocalDev;
+  const mockContext = {
+    user: { fid: 9999, username: "", displayName: "" },
+    client: {
+      clientFid: 0,
+      added: false,
+      safeAreaInsets: { top: 0, bottom: 0, left: 0, right: 0 },
+    },
+  };
 
   // Get context with fallback for local dev
   let context;
@@ -41,10 +41,10 @@ export async function renderDifficultySelection(container: HTMLElement) {
     context = mockContext;
   }
 
-  // const user = context.user;
-  // const welcomeMessage = user.username
-  //   ? `Welcome, ${user.username}!`
-  //   : `Welcome, FID ${user.fid}!`;
+  const username = isFarcasterEnvironment
+    ? context.user.username || `FID ${context.user.fid}`
+    : "LocalTester";
+  console.log("Resolved username:", username);
 
   const savedGame = loadGame();
 

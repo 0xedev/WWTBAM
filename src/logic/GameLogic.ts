@@ -447,7 +447,7 @@ export async function endGame(walkAway: boolean, message: string) {
     window.location.hostname === "127.0.0.1";
   const isFarcasterEnvironment = !!window.parent && !isLocalDev;
   const mockContext = {
-    user: { fid: 9999, username: "", displayName: "" },
+    user: { fid: 9999, username: "LocalTester", displayName: "Local Tester" },
     client: {
       clientFid: 0,
       added: false,

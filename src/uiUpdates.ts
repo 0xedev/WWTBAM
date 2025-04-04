@@ -1,14 +1,14 @@
 import "./utils/Constants";
 
 export function updateQuestionUI(
-  question: { question: string },
+  normalizedQuestion: string,
   answers: string[],
   answerButtons: HTMLButtonElement[],
   handleAnswer: (answer: string, btn: HTMLButtonElement) => void
 ) {
   const questionEl = document.getElementById("question") as HTMLDivElement;
   if (questionEl) {
-    questionEl.textContent = question.question;
+    questionEl.textContent = normalizedQuestion;
   }
   answerButtons.forEach((btn, i) => {
     if (btn) {

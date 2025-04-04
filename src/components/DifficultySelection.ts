@@ -41,10 +41,10 @@ export async function renderDifficultySelection(container: HTMLElement) {
     context = mockContext;
   }
 
-  const user = context.user;
-  const welcomeMessage = user.username
-    ? `Welcome, ${user.username}!`
-    : `Welcome, FID ${user.fid}!`;
+  // const user = context.user;
+  // const welcomeMessage = user.username
+  //   ? `Welcome, ${user.username}!`
+  //   : `Welcome, FID ${user.fid}!`;
 
   const savedGame = loadGame();
 

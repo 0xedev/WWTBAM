@@ -6,13 +6,13 @@
   },
   "frame": {
     "version": "1",
-    "name": "Example Frame",
+    "name": "WWTBAM",
     "iconUrl": "https://wwtbam-rho.vercel.app/icon.png",
     "homeUrl": "https://wwtbam-rho.vercel.app",
-    "imageUrl": "https://wwtbam-rho.vercel.app/image.png",
+    "imageUrl": "https://wwtbam-rho.vercel.app/image.jpg",
     "buttonTitle": "Check this out",
-    "splashImageUrl": "https://wwtbam-rho.vercel.app/splash.png",
-    "splashBackgroundColor": "#eeccff",
+    "splashImageUrl": "https://wwtbam-rho.vercel.app/splash.jpg",
+    "splashBackgroundColor": "#2D244F",
     "webhookUrl": "https://wwtbam-rho.vercel.app/api/webhook"
   }
 }
